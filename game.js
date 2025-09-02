@@ -8,8 +8,7 @@ class GalacticDefender {
         // Space/Camera system
         this.space = {
             width: 4000,
-            height: 3000,
-            sectors: this.createSpaceSectors()
+            height: 3000
         };
 
         this.camera = {
@@ -107,74 +106,7 @@ class GalacticDefender {
         this.gameLoop();
     }
 
-    createSpaceSectors() {
-        return [
-            {
-                name: 'Earth Station',
-                x: 1800, y: 1400, width: 400, height: 200,
-                color: '#001144',
-                enemyTypes: [],
-                spawnRate: 0,
-                description: 'Safe harbor - Earth defense station'
-            },
-            {
-                name: 'Asteroid Belt',
-                x: 0, y: 0, width: 1200, height: 1000,
-                color: '#111111',
-                enemyTypes: ['scout', 'miner'],
-                spawnRate: 0.02,
-                description: 'Mining drones and scout ships'
-            },
-            {
-                name: 'Mars Orbit',
-                x: 1200, y: 0, width: 1000, height: 800,
-                color: '#220000',
-                enemyTypes: ['fighter', 'bomber'],
-                spawnRate: 0.025,
-                description: 'Martian defense fleet'
-            },
-            {
-                name: 'Jupiter System',
-                x: 2200, y: 0, width: 1200, height: 1200,
-                color: '#332211',
-                enemyTypes: ['cruiser', 'interceptor'],
-                spawnRate: 0.03,
-                description: 'Heavy alien presence'
-            },
-            {
-                name: 'Deep Space',
-                x: 0, y: 1000, width: 1200, height: 1000,
-                color: '#000022',
-                enemyTypes: ['mothership', 'drone'],
-                spawnRate: 0.02,
-                description: 'Unknown alien vessels'
-            },
-            {
-                name: 'Nebula',
-                x: 1200, y: 800, width: 1000, height: 800,
-                color: '#220044',
-                enemyTypes: ['phantom', 'wraith'],
-                spawnRate: 0.035,
-                description: 'Energy-based lifeforms'
-            },
-            {
-                name: 'Alien Homeworld',
-                x: 2200, y: 1200, width: 1200, height: 1200,
-                color: '#440022',
-                enemyTypes: ['destroyer', 'battleship'],
-                spawnRate: 0.04,
-                description: 'Elite alien fleet'
-            },
-            {
-                name: 'Galactic Core',
-                x: 1200, y: 1600, width: 1000, height: 800,
-                color: '#444400',
-                enemyTypes: ['scout', 'fighter', 'cruiser', 'mothership'],
-                spawnRate: 0.05,
-                description: 'All enemy ship types'
-            }
-        ];
-    }
+
 
     setupEventListeners() {
         // Keyboard controls
@@ -219,11 +151,11 @@ class GalacticDefender {
             }
         });
 
-        this.canvas.addEventListener('mousedown', () => {
+        this.canvas.addEventListener('mousedown', (e) => {
             this.mouse.down = true;
         });
 
-        this.canvas.addEventListener('mouseup', () => {
+        this.canvas.addEventListener('mouseup', (e) => {
             this.mouse.down = false;
         });
 
@@ -289,21 +221,16 @@ class GalacticDefender {
     }
 
     spawnSpaceEnemy() {
-        // Choose a random sector (excluding safe zone)
-        const sectors = this.space.sectors.filter(sector => sector.name !== 'Earth Station');
-        const sector = sectors[Math.floor(Math.random() * sectors.length)];
-
-        if (sector.enemyTypes.length === 0) return;
-
-        const enemyType = sector.enemyTypes[Math.floor(Math.random() * sector.enemyTypes.length)];
-        const x = sector.x + Math.random() * sector.width;
-        const y = sector.y + Math.random() * sector.height;
+        const enemyTypes = ['scout', 'fighter', 'bomber', 'cruiser', 'interceptor', 'miner', 'drone'];
+        const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+        
+        const x = Math.random() * this.space.width;
+        const y = Math.random() * this.space.height;
 
         const enemy = {
             x: x,
             y: y,
             type: enemyType,
-            sector: sector.name,
             ...this.getEnemyStats(enemyType),
             angle: Math.random() * Math.PI * 2,
             shootTimer: 0,
@@ -316,9 +243,8 @@ class GalacticDefender {
     }
 
     spawnSpacePowerup() {
-        const sector = this.space.sectors[Math.floor(Math.random() * this.space.sectors.length)];
-        const x = sector.x + Math.random() * sector.width;
-        const y = sector.y + Math.random() * sector.height;
+        const x = Math.random() * this.space.width;
+        const y = Math.random() * this.space.height;
 
         const types = ['health', 'shield', 'damage', 'speed', 'weapon'];
         const type = types[Math.floor(Math.random() * types.length)];
@@ -336,39 +262,27 @@ class GalacticDefender {
         this.powerups.push(powerup);
     }
 
-    getCurrentSector() {
-        for (const sector of this.space.sectors) {
-            if (this.player.x >= sector.x && this.player.x <= sector.x + sector.width &&
-                this.player.y >= sector.y && this.player.y <= sector.y + sector.height) {
-                return sector;
-            }
-        }
-        return this.space.sectors[0]; // Default to first sector
-    }
-
-    spawnEnemyInSector() {
-        // Spawn enemies based on current sector
-        const currentSector = this.getCurrentSector();
-
-        if (currentSector.enemyTypes.length === 0 || Math.random() > currentSector.spawnRate) return;
-
-        const enemyType = currentSector.enemyTypes[Math.floor(Math.random() * currentSector.enemyTypes.length)];
-
+    spawnRandomEnemy() {
+        // Simple space-wide enemy spawning
+        if (Math.random() > 0.02) return; // 2% chance per frame
+        
+        const enemyTypes = ['scout', 'fighter', 'bomber', 'cruiser', 'interceptor', 'miner', 'drone'];
+        const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+        
         // Spawn near player but off-screen
         const angle = Math.random() * Math.PI * 2;
         const distance = 400 + Math.random() * 200;
         const x = this.player.x + Math.cos(angle) * distance;
         const y = this.player.y + Math.sin(angle) * distance;
-
-        // Make sure it's within the sector
-        const clampedX = Math.max(currentSector.x, Math.min(currentSector.x + currentSector.width, x));
-        const clampedY = Math.max(currentSector.y, Math.min(currentSector.y + currentSector.height, y));
+        
+        // Make sure it's within space bounds
+        const clampedX = Math.max(50, Math.min(this.space.width - 50, x));
+        const clampedY = Math.max(50, Math.min(this.space.height - 50, y));
 
         const enemy = {
             x: clampedX,
             y: clampedY,
             type: enemyType,
-            sector: currentSector.name,
             ...this.getEnemyStats(enemyType),
             angle: Math.random() * Math.PI * 2,
             shootTimer: 0,
@@ -815,8 +729,8 @@ class GalacticDefender {
         // Update explosions
         this.updateExplosions();
 
-        // Continuous enemy spawning based on zone
-        this.spawnEnemyInSector();
+        // Continuous enemy spawning
+        this.spawnRandomEnemy();
 
         // Remove enemies that are too far from player
         this.cullDistantEnemies();
@@ -839,6 +753,16 @@ class GalacticDefender {
 
         this.camera.x += (targetX - this.camera.x) * this.camera.followSpeed;
         this.camera.y += (targetY - this.camera.y) * this.camera.followSpeed;
+
+        // Keep camera within world bounds
+        this.camera.x = Math.max(0, Math.min(this.space.width - this.canvas.width, this.camera.x));
+        this.camera.y = Math.max(0, Math.min(this.space.height - this.canvas.height, this.camera.y));
+    }
+
+    updateCameraImmediate() {
+        // Immediately center camera on player (for initialization)
+        this.camera.x = this.player.x - this.canvas.width / 2;
+        this.camera.y = this.player.y - this.canvas.height / 2;
 
         // Keep camera within world bounds
         this.camera.x = Math.max(0, Math.min(this.space.width - this.canvas.width, this.camera.x));
@@ -938,8 +862,8 @@ class GalacticDefender {
                 }
             });
 
-            return proj.life > 0 && proj.x > -50 && proj.x < this.canvas.width + 50 &&
-                proj.y > -50 && proj.y < this.canvas.height + 50;
+            return proj.life > 0 && proj.x > -50 && proj.x < this.space.width + 50 &&
+                proj.y > -50 && proj.y < this.space.height + 50;
         });
     }
 
@@ -1291,7 +1215,7 @@ class GalacticDefender {
 
         // Draw UI elements (not affected by camera)
         this.drawMinimap();
-        this.drawSectorInfo();
+
 
         // Draw crosshair (screen space)
         this.ctx.strokeStyle = '#ffffff66';
@@ -1305,23 +1229,6 @@ class GalacticDefender {
     }
 
     drawSpaceBackground() {
-        // Draw sector backgrounds
-        this.space.sectors.forEach(sector => {
-            this.ctx.fillStyle = sector.color;
-            this.ctx.fillRect(sector.x, sector.y, sector.width, sector.height);
-
-            // Draw sector borders
-            this.ctx.strokeStyle = '#ffffff11';
-            this.ctx.lineWidth = 1;
-            this.ctx.strokeRect(sector.x, sector.y, sector.width, sector.height);
-
-            // Draw sector name
-            this.ctx.fillStyle = '#ffffff44';
-            this.ctx.font = '20px Courier New';
-            this.ctx.textAlign = 'center';
-            this.ctx.fillText(sector.name, sector.x + sector.width / 2, sector.y + 25);
-        });
-
         // Draw stars
         this.stars.forEach(star => {
             star.twinkle += 0.05;
@@ -1401,15 +1308,16 @@ class GalacticDefender {
         this.ctx.lineWidth = 2;
         this.ctx.strokeRect(minimapX, minimapY, minimapSize, minimapSize);
 
-        // Draw sectors on minimap
-        this.space.sectors.forEach(sector => {
-            this.ctx.fillStyle = sector.color;
-            this.ctx.fillRect(
-                minimapX + sector.x * scaleX,
-                minimapY + sector.y * scaleY,
-                sector.width * scaleX,
-                sector.height * scaleY
+        // Draw space objects on minimap
+        this.ctx.fillStyle = '#444444';
+        this.planets.forEach(planet => {
+            this.ctx.beginPath();
+            this.ctx.arc(
+                minimapX + planet.x * scaleX,
+                minimapY + planet.y * scaleY,
+                2, 0, Math.PI * 2
             );
+            this.ctx.fill();
         });
 
         // Draw player on minimap
@@ -1447,36 +1355,7 @@ class GalacticDefender {
         });
     }
 
-    drawSectorInfo() {
-        const currentSector = this.getCurrentSector();
 
-        // Sector info panel
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-        this.ctx.fillRect(20, this.canvas.height - 100, 300, 80);
-        this.ctx.strokeStyle = currentSector.color;
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(20, this.canvas.height - 100, 300, 80);
-
-        // Sector name
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '16px Courier New';
-        this.ctx.textAlign = 'left';
-        this.ctx.fillText(`Sector: ${currentSector.name}`, 30, this.canvas.height - 75);
-
-        // Sector description
-        this.ctx.font = '12px Courier New';
-        this.ctx.fillStyle = '#cccccc';
-        this.ctx.fillText(currentSector.description, 30, this.canvas.height - 55);
-
-        // Enemy count in area
-        const nearbyEnemies = this.enemies.filter(enemy => {
-            const dx = enemy.x - this.player.x;
-            const dy = enemy.y - this.player.y;
-            return Math.sqrt(dx * dx + dy * dy) < 300;
-        }).length;
-
-        this.ctx.fillText(`Nearby Enemies: ${nearbyEnemies}`, 30, this.canvas.height - 35);
-    }
 
     drawAbilityEffects() {
         // Time freeze effect - blue tint
@@ -1621,6 +1500,9 @@ class GalacticDefender {
         this.particles = [];
         this.powerups = [];
         this.explosions = [];
+        this.asteroids = [];
+        this.planets = [];
+        this.stars = [];
 
         document.getElementById('game-over').classList.add('hidden');
         document.getElementById('upgrade-menu').classList.add('hidden');
