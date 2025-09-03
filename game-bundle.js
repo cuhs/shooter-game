@@ -56,6 +56,18 @@ const GameConfig = {
     SPAWN_RATES: {
         ENEMY_CHANCE: 0.02,
         POWERUP_CHANCE: 0.001
+    },
+    
+    // Wave system configuration
+    WAVE_CONFIG: {
+        BASE_ENEMIES_PER_WAVE: 8,
+        ENEMIES_INCREASE_PER_WAVE: 2,
+        WAVE_BREAK_DURATION: 180, // 3 seconds
+        DIFFICULTY_SCALING: {
+            HEALTH_PER_WAVE: 8,
+            SPEED_PER_WAVE: 0.08,
+            DAMAGE_PER_WAVE: 2
+        }
     }
 };
 
@@ -255,19 +267,22 @@ class Player {
 
 // Enemy class
 class Enemy {
-    constructor(x, y, type) {
+    constructor(x, y, type, wave = 1) {
         this.x = x;
         this.y = y;
         this.type = type;
 
         const config = GameConfig.ENEMY_TYPES[type];
+        
+        // Apply wave scaling
+        const waveMultiplier = 1 + (wave - 1) * 0.15; // 15% increase per wave
         this.size = config.size;
-        this.speed = config.speed;
-        this.maxHealth = config.health;
+        this.speed = config.speed + (wave - 1) * GameConfig.WAVE_CONFIG.DIFFICULTY_SCALING.SPEED_PER_WAVE;
+        this.maxHealth = Math.floor(config.health + (wave - 1) * GameConfig.WAVE_CONFIG.DIFFICULTY_SCALING.HEALTH_PER_WAVE);
         this.health = this.maxHealth;
         this.color = config.color;
-        this.points = config.points;
-        this.damage = 20;
+        this.points = Math.floor(config.points * waveMultiplier);
+        this.damage = 20 + (wave - 1) * GameConfig.WAVE_CONFIG.DIFFICULTY_SCALING.DAMAGE_PER_WAVE;
 
         this.angle = 0;
         this.targetAngle = 0;
@@ -359,6 +374,13 @@ class Game {
         this.wave = 1;
         this.combo = 1;
         this.comboTimer = 0;
+        
+        // Wave management
+        this.waveInProgress = false;
+        this.enemiesInWave = 0;
+        this.enemiesKilledInWave = 0;
+        this.waveTransitionTimer = 0;
+        this.waveStartDelay = 180; // 3 seconds at 60fps
         this.bloodlustTimer = 0; // For berserker bloodlust ability
         this.stealthTimer = 0; // For assassin stealth ability
         this.turrets = []; // For engineer auto-turrets
@@ -629,8 +651,57 @@ class Game {
             type = types[Math.floor(Math.random() * types.length)];
         }
 
-        const enemy = new Enemy(x, y, type);
+        const enemy = new Enemy(x, y, type, this.wave);
         this.enemies.push(enemy);
+        
+        // Track enemies in current wave
+        if (this.waveInProgress) {
+            this.enemiesInWave++;
+        }
+    }
+
+    startWave() {
+        this.waveInProgress = true;
+        this.enemiesInWave = 0;
+        this.enemiesKilledInWave = 0;
+        
+        // Calculate enemies for this wave
+        const enemiesThisWave = GameConfig.WAVE_CONFIG.BASE_ENEMIES_PER_WAVE + 
+                               (this.wave - 1) * GameConfig.WAVE_CONFIG.ENEMIES_INCREASE_PER_WAVE;
+        
+        // Spawn enemies for this wave
+        for (let i = 0; i < enemiesThisWave; i++) {
+            // Spawn enemies around the player but off-screen
+            const angle = (i / enemiesThisWave) * Math.PI * 2 + Math.random() * 0.5;
+            const distance = 800 + Math.random() * 400;
+            const x = this.player.x + Math.cos(angle) * distance;
+            const y = this.player.y + Math.sin(angle) * distance;
+            
+            // Ensure enemies spawn within world bounds
+            const clampedX = Math.max(50, Math.min(GameConfig.SPACE_WIDTH - 50, x));
+            const clampedY = Math.max(50, Math.min(GameConfig.SPACE_HEIGHT - 50, y));
+            
+            this.spawnEnemy(clampedX, clampedY);
+        }
+        
+        console.log(`Wave ${this.wave} started with ${enemiesThisWave} enemies`);
+    }
+
+    checkWaveCompletion() {
+        if (this.waveInProgress && this.enemiesKilledInWave >= this.enemiesInWave) {
+            this.completeWave();
+        }
+    }
+
+    completeWave() {
+        this.waveInProgress = false;
+        this.wave++;
+        this.waveTransitionTimer = GameConfig.WAVE_CONFIG.WAVE_BREAK_DURATION;
+        
+        // Bonus score for completing wave
+        this.score += this.wave * 100;
+        
+        console.log(`Wave ${this.wave - 1} completed! Starting wave ${this.wave} in ${this.waveTransitionTimer / 60} seconds`);
     }
 
     setupEventListeners() {
@@ -704,7 +775,6 @@ class Game {
         document.querySelectorAll('.class-option').forEach(option => {
             option.addEventListener('click', (e) => {
                 const classType = e.currentTarget.getAttribute('data-class');
-                console.log(`Class option clicked, data-class: "${classType}"`);
                 this.selectClass(classType);
             });
         });
@@ -868,6 +938,11 @@ class Game {
                         }
 
                         this.enemies.splice(i, 1);
+                        
+                        // Track wave progress
+                        if (this.waveInProgress) {
+                            this.enemiesKilledInWave++;
+                        }
                     }
                 }
             }
@@ -1011,6 +1086,11 @@ class Game {
 
                         this.checkLevelUp();
                         this.enemies.splice(i, 1);
+                        
+                        // Track wave progress
+                        if (this.waveInProgress) {
+                            this.enemiesKilledInWave++;
+                        }
                     }
                     break;
                 }
@@ -1077,6 +1157,11 @@ class Game {
                 }
                 // Remove enemy on contact (kamikaze style)
                 this.enemies.splice(i, 1);
+                
+                // Track wave progress
+                if (this.waveInProgress) {
+                    this.enemiesKilledInWave++;
+                }
                 i--; // Adjust index since we removed an element
                 continue;
             }
@@ -1106,6 +1191,12 @@ class Game {
 
                     // Remove enemy on contact
                     this.enemies.splice(i, 1);
+                    
+                    // Track wave progress
+                    if (this.waveInProgress) {
+                        this.enemiesKilledInWave++;
+                    }
+                    
                     i--; // Adjust index since we removed an element
                     break;
                 }
@@ -1122,17 +1213,19 @@ class Game {
             }
         }
 
-        // Spawn random enemies
-        if (Math.random() < GameConfig.SPAWN_RATES.ENEMY_CHANCE && this.enemies.length < 15) {
-            const angle = Math.random() * Math.PI * 2;
-            const distance = 800;
-            const x = this.player.x + Math.cos(angle) * distance;
-            const y = this.player.y + Math.sin(angle) * distance;
-
-            if (x > 0 && x < GameConfig.SPACE_WIDTH && y > 0 && y < GameConfig.SPACE_HEIGHT) {
-                this.spawnEnemy(x, y);
+        // Wave management
+        if (this.waveTransitionTimer > 0) {
+            this.waveTransitionTimer--;
+            if (this.waveTransitionTimer === 0) {
+                this.startWave();
             }
+        } else if (!this.waveInProgress && this.enemies.length === 0) {
+            // Start first wave or next wave if no enemies remain
+            this.startWave();
         }
+        
+        // Check wave completion
+        this.checkWaveCompletion();
 
         // Update particles
         for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -1574,7 +1667,17 @@ class Game {
         if (levelElement) levelElement.textContent = this.level;
         if (xpText) xpText.textContent = `${this.experience}/${this.experienceToNext}`;
         if (scoreElement) scoreElement.textContent = this.score;
-        if (waveElement) waveElement.textContent = this.wave;
+        if (waveElement) {
+            if (this.waveTransitionTimer > 0) {
+                const seconds = Math.ceil(this.waveTransitionTimer / 60);
+                waveElement.textContent = `${this.wave} (Starting in ${seconds}s)`;
+            } else if (this.waveInProgress) {
+                const remaining = this.enemiesInWave - this.enemiesKilledInWave;
+                waveElement.textContent = `${this.wave} (${remaining} enemies left)`;
+            } else {
+                waveElement.textContent = this.wave;
+            }
+        }
         if (comboElement) comboElement.textContent = `x${this.combo}`;
 
         // Render minimap
@@ -1845,18 +1948,10 @@ class Game {
         this.selectedClass = classType;
         const config = this.classConfigs[classType];
 
-        console.log(`Selecting class: "${classType}"`);
-        console.log(`Config exists:`, !!config);
-        console.log(`Available classes:`, Object.keys(this.classConfigs));
-
         if (!config) {
             console.error(`No configuration found for class: ${classType}`);
             return;
         }
-
-        console.log(`Full config:`, JSON.stringify(config, null, 2));
-        console.log(`Shield multiplier: ${config.shieldMultiplier}`);
-        console.log(`Base shield: ${GameConfig.PLAYER.MAX_SHIELD}`);
 
         // Apply class bonuses to player
         this.player.maxHealth = Math.floor(GameConfig.PLAYER.MAX_HEALTH * config.healthMultiplier);
@@ -1864,7 +1959,7 @@ class Game {
         this.player.maxShield = Math.floor(GameConfig.PLAYER.MAX_SHIELD * config.shieldMultiplier);
         this.player.shield = this.player.maxShield;
 
-        console.log(`Applied shield: ${this.player.maxShield}, Health: ${this.player.maxHealth}`);
+
 
         // Apply class bonuses to player stats
         this.playerStats.speedMultiplier = config.speedMultiplier;
@@ -1906,6 +2001,9 @@ class Game {
         document.getElementById('class-selection').classList.add('hidden');
         this.gameRunning = true;
         this.gameStarted = true;
+        
+        // Start the first wave after a short delay
+        this.waveTransitionTimer = 120; // 2 seconds
     }
 
     restart() {
@@ -1913,6 +2011,12 @@ class Game {
         this.wave = 1;
         this.combo = 1;
         this.comboTimer = 0;
+        
+        // Reset wave management
+        this.waveInProgress = false;
+        this.enemiesInWave = 0;
+        this.enemiesKilledInWave = 0;
+        this.waveTransitionTimer = this.waveStartDelay;
         this.bloodlustTimer = 0;
         this.gameRunning = false;
         this.gameStarted = false;
