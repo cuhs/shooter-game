@@ -7,7 +7,7 @@ const GameConfig = {
     // Player settings
     PLAYER: {
         SIZE: 12,
-        SPEED: 8,
+        SPEED: 5,
         MAX_HEALTH: 100,
         MAX_SHIELD: 50,
         COLOR: '#00ffff',
@@ -22,21 +22,21 @@ const GameConfig = {
 
     // Weapon configurations
     WEAPONS: [
-        { name: 'PHOTON', damage: 15, speed: 12, size: 3, color: '#00ffff', fireRate: 8, ammo: Infinity },
-        { name: 'SCATTER', damage: 10, speed: 10, size: 2, color: '#ff6600', fireRate: 12, ammo: Infinity },
-        { name: 'BEAM', damage: 25, speed: 18, size: 2, color: '#ff0000', fireRate: 4, ammo: 50 },
-        { name: 'PLASMA', damage: 30, speed: 8, size: 5, color: '#ff00ff', fireRate: 6, ammo: 30 }
+        { name: 'PHOTON', damage: 15, speed: 12, size: 3, color: '#00ffff', fireRate: 25, ammo: Infinity },
+        { name: 'SCATTER', damage: 10, speed: 10, size: 2, color: '#ff6600', fireRate: 35, ammo: Infinity },
+        { name: 'BEAM', damage: 25, speed: 18, size: 2, color: '#ff0000', fireRate: 15, ammo: 50 },
+        { name: 'PLASMA', damage: 30, speed: 8, size: 5, color: '#ff00ff', fireRate: 20, ammo: 30 }
     ],
 
     // Enemy types and stats
     ENEMY_TYPES: {
-        scout: { size: 6, speed: 3, health: 25, color: '#ff6666', points: 10 },
-        fighter: { size: 8, speed: 2.5, health: 40, color: '#ff4444', points: 20 },
-        bomber: { size: 12, speed: 1.5, health: 60, color: '#ff2222', points: 30 },
-        cruiser: { size: 15, speed: 2, health: 80, color: '#ff0000', points: 50 },
-        interceptor: { size: 7, speed: 4, health: 30, color: '#ff8888', points: 25 },
-        miner: { size: 10, speed: 1, health: 50, color: '#ffaa44', points: 15 },
-        drone: { size: 5, speed: 3.5, health: 20, color: '#ff9999', points: 8 }
+        scout: { size: 6, speed: 2, health: 25, color: '#ff6666', points: 10 },
+        fighter: { size: 8, speed: 1.8, health: 40, color: '#ff4444', points: 20 },
+        bomber: { size: 12, speed: 1, health: 60, color: '#ff2222', points: 30 },
+        cruiser: { size: 15, speed: 1.3, health: 80, color: '#ff0000', points: 50 },
+        interceptor: { size: 7, speed: 2.5, health: 30, color: '#ff8888', points: 25 },
+        miner: { size: 10, speed: 0.7, health: 50, color: '#ffaa44', points: 15 },
+        drone: { size: 5, speed: 2.2, health: 20, color: '#ff9999', points: 8 }
     },
 
     // Space generation settings
@@ -124,7 +124,7 @@ class Player {
             dy *= 0.707;
         }
 
-        // Apply movement
+        // Apply movement (will be modified by game's speed multiplier)
         this.x += dx * this.speed;
         this.y += dy * this.speed;
 
@@ -145,7 +145,8 @@ class Player {
 
         // Shield regeneration (only after delay)
         if (this.shield < this.maxShield && this.shieldRegenDelay <= 0) {
-            this.shield = Math.min(this.maxShield, this.shield + 0.15);
+            const regenRate = this.shieldRegenBonus ? 0.3 : 0.15; // Faster if upgraded
+            this.shield = Math.min(this.maxShield, this.shield + regenRate);
         }
     }
 
@@ -160,6 +161,9 @@ class Player {
 
         this.dashCooldown = GameConfig.PLAYER.DASH_COOLDOWN;
         this.invulnerable = 30;
+        
+        // Store dash damage flag for game to check
+        this.dashingThisFrame = true;
     }
 
     takeDamage(damage) {
@@ -312,6 +316,54 @@ class Game {
         this.combo = 1;
         this.comboTimer = 0;
         this.gameRunning = true;
+        
+        // Level system
+        this.level = 1;
+        this.experience = 0;
+        this.experienceToNext = 200;
+        this.showLevelUpMenu = false;
+        this.levelUpOptions = [];
+        
+        // Player stats (tracked for upgrades)
+        this.playerStats = {
+            damageMultiplier: 1,
+            fireRateMultiplier: 1,
+            speedMultiplier: 1,
+            maxHealthBonus: 0,
+            maxShieldBonus: 0,
+            multiShotCount: 0,
+            piercingShots: false,
+            dashDamage: false,
+            explosiveShots: false,
+            magneticField: false,
+            shieldRegen: false,
+            vampiric: false
+        };
+        
+        // All possible upgrades
+        this.upgradePool = [
+            // Basic stat upgrades
+            { id: 'damage1', name: 'Weapon Upgrade', description: '+25% weapon damage', rarity: 'common', effect: () => this.playerStats.damageMultiplier += 0.25 },
+            { id: 'damage2', name: 'Advanced Targeting', description: '+40% weapon damage', rarity: 'uncommon', effect: () => this.playerStats.damageMultiplier += 0.4 },
+            { id: 'firerate1', name: 'Rapid Fire', description: '+30% fire rate', rarity: 'common', effect: () => this.playerStats.fireRateMultiplier += 0.3 },
+            { id: 'firerate2', name: 'Auto-Loader', description: '+50% fire rate', rarity: 'uncommon', effect: () => this.playerStats.fireRateMultiplier += 0.5 },
+            { id: 'speed1', name: 'Engine Boost', description: '+25% movement speed', rarity: 'common', effect: () => this.playerStats.speedMultiplier += 0.25 },
+            { id: 'speed2', name: 'Afterburners', description: '+40% movement speed', rarity: 'uncommon', effect: () => this.playerStats.speedMultiplier += 0.4 },
+            { id: 'health1', name: 'Hull Plating', description: '+30 max health', rarity: 'common', effect: () => { this.playerStats.maxHealthBonus += 30; this.player.maxHealth += 30; this.player.health += 30; } },
+            { id: 'health2', name: 'Reinforced Hull', description: '+50 max health', rarity: 'uncommon', effect: () => { this.playerStats.maxHealthBonus += 50; this.player.maxHealth += 50; this.player.health += 50; } },
+            { id: 'shield1', name: 'Shield Generator', description: '+25 max shield', rarity: 'common', effect: () => { this.playerStats.maxShieldBonus += 25; this.player.maxShield += 25; this.player.shield += 25; } },
+            { id: 'shield2', name: 'Advanced Shields', description: '+40 max shield', rarity: 'uncommon', effect: () => { this.playerStats.maxShieldBonus += 40; this.player.maxShield += 40; this.player.shield += 40; } },
+            
+            // Special abilities
+            { id: 'multishot1', name: 'Twin Cannons', description: 'Fire 2 projectiles', rarity: 'uncommon', effect: () => this.playerStats.multiShotCount = Math.max(this.playerStats.multiShotCount, 1) },
+            { id: 'multishot2', name: 'Triple Threat', description: 'Fire 3 projectiles', rarity: 'rare', effect: () => this.playerStats.multiShotCount = Math.max(this.playerStats.multiShotCount, 2) },
+            { id: 'piercing', name: 'Piercing Rounds', description: 'Shots pierce through enemies', rarity: 'rare', effect: () => this.playerStats.piercingShots = true },
+            { id: 'dashdamage', name: 'Ramming Speed', description: 'Dashing through enemies deals damage', rarity: 'rare', effect: () => this.playerStats.dashDamage = true },
+            { id: 'explosive', name: 'Explosive Rounds', description: 'Shots explode on impact', rarity: 'rare', effect: () => this.playerStats.explosiveShots = true },
+            { id: 'magnetic', name: 'Magnetic Field', description: 'Attract items from distance', rarity: 'uncommon', effect: () => this.playerStats.magneticField = true },
+            { id: 'shieldregen', name: 'Shield Regenerator', description: 'Shields regenerate faster', rarity: 'uncommon', effect: () => this.playerStats.shieldRegen = true },
+            { id: 'vampiric', name: 'Life Steal', description: 'Gain health when killing enemies', rarity: 'rare', effect: () => this.playerStats.vampiric = true }
+        ];
 
         // Initialize systems
         this.camera = new Camera(GameConfig.SPACE_WIDTH, GameConfig.SPACE_HEIGHT, this.canvas);
@@ -406,6 +458,19 @@ class Game {
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
             this.keys[e.key.toLowerCase()] = true;
+            
+            // Level up menu controls
+            if (this.showLevelUpMenu) {
+                const keyNum = parseInt(e.key);
+                
+                if (keyNum >= 1 && keyNum <= 3) {
+                    this.selectUpgrade(keyNum - 1);
+                } else if (e.key === 'Escape') {
+                    this.showLevelUpMenu = false;
+                    this.gameRunning = true;
+                }
+                e.preventDefault();
+            }
         });
 
         document.addEventListener('keyup', (e) => {
@@ -421,8 +486,24 @@ class Game {
             this.mouse.worldY = this.mouse.y + this.camera.y;
         });
 
-        this.canvas.addEventListener('mousedown', () => {
+        this.canvas.addEventListener('mousedown', (e) => {
             this.mouse.down = true;
+            
+            // Check level up menu clicks
+            if (this.showLevelUpMenu && this.levelUpOptionBounds) {
+                const rect = this.canvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+                
+                for (let i = 0; i < this.levelUpOptionBounds.length; i++) {
+                    const bounds = this.levelUpOptionBounds[i];
+                    if (clickX >= bounds.x && clickX <= bounds.x + bounds.width &&
+                        clickY >= bounds.y && clickY <= bounds.y + bounds.height) {
+                        this.selectUpgrade(i);
+                        break;
+                    }
+                }
+            }
         });
 
         this.canvas.addEventListener('mouseup', () => {
@@ -439,18 +520,45 @@ class Game {
         if (this.fireTimer > 0) return;
 
         const weapon = this.weapons[this.currentWeapon];
-        this.fireTimer = weapon.fireRate;
+        this.fireTimer = Math.max(1, Math.floor(weapon.fireRate / this.playerStats.fireRateMultiplier));
 
         const angle = Math.atan2(this.mouse.worldY - this.player.y, this.mouse.worldX - this.player.x);
 
+        // Apply stat modifiers
+        const finalDamage = weapon.damage * this.playerStats.damageMultiplier;
+        
         const projectile = new Projectile(
             this.player.x,
             this.player.y,
             Math.cos(angle) * weapon.speed,
             Math.sin(angle) * weapon.speed,
             weapon,
-            weapon.damage
+            finalDamage
         );
+        
+        // Add special properties
+        projectile.piercing = this.playerStats.piercingShots;
+        projectile.explosive = this.playerStats.explosiveShots;
+        
+        this.projectiles.push(projectile);
+        
+        // Multi-shot ability
+        if (this.playerStats.multiShotCount > 0) {
+            for (let i = 1; i <= this.playerStats.multiShotCount; i++) {
+                const spreadAngle = angle + (i % 2 === 1 ? 0.3 : -0.3) * Math.ceil(i / 2);
+                const extraProjectile = new Projectile(
+                    this.player.x,
+                    this.player.y,
+                    Math.cos(spreadAngle) * weapon.speed,
+                    Math.sin(spreadAngle) * weapon.speed,
+                    weapon,
+                    finalDamage * 0.8 // Slightly less damage for extra shots
+                );
+                extraProjectile.piercing = this.playerStats.piercingShots;
+                extraProjectile.explosive = this.playerStats.explosiveShots;
+                this.projectiles.push(extraProjectile);
+            }
+        }
 
         this.projectiles.push(projectile);
     }
@@ -459,7 +567,50 @@ class Game {
         if (!this.gameRunning) return;
 
         // Update player
+        const originalSpeed = this.player.speed;
+        this.player.speed = GameConfig.PLAYER.SPEED * this.playerStats.speedMultiplier;
+        this.player.dashingThisFrame = false; // Reset dash flag
         this.player.update(this.keys, this.canvas);
+        this.player.speed = originalSpeed; // Reset for consistency
+        
+        // Check dash damage
+        if (this.player.dashingThisFrame && this.playerStats.dashDamage) {
+            for (let i = this.enemies.length - 1; i >= 0; i--) {
+                const enemy = this.enemies[i];
+                const dx = enemy.x - this.player.x;
+                const dy = enemy.y - this.player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < enemy.size + this.player.size + 20) { // Slightly larger radius for dash
+                    enemy.takeDamage(50); // Dash damage
+                    
+                    // Create dash particles
+                    for (let j = 0; j < 8; j++) {
+                        this.particles.push({
+                            x: enemy.x,
+                            y: enemy.y,
+                            vx: (Math.random() - 0.5) * 12,
+                            vy: (Math.random() - 0.5) * 12,
+                            life: 20,
+                            color: '#ffaa00',
+                            size: 3
+                        });
+                    }
+                    
+                    if (enemy.isDead()) {
+                        const points = enemy.getPoints() * this.combo;
+                        this.score += points;
+                        this.experience += Math.floor(points / 2);
+                        
+                        if (this.playerStats.vampiric) {
+                            this.player.health = Math.min(this.player.maxHealth, this.player.health + 5);
+                        }
+                        
+                        this.enemies.splice(i, 1);
+                    }
+                }
+            }
+        }
 
         // Update camera
         this.camera.update(this.player);
@@ -493,9 +644,18 @@ class Game {
                     this.projectiles.splice(j, 1);
 
                     if (enemy.isDead()) {
-                        this.score += enemy.getPoints() * this.combo;
+                        const points = enemy.getPoints() * this.combo;
+                        this.score += points;
+                        this.experience += Math.floor(points / 2); // Gain XP equal to half the points
                         this.combo = Math.min(10, this.combo + 1);
                         this.comboTimer = 180;
+                        
+                        // Vampiric healing
+                        if (this.playerStats.vampiric) {
+                            this.player.health = Math.min(this.player.maxHealth, this.player.health + 5);
+                        }
+                        
+                        this.checkLevelUp();
                         this.enemies.splice(i, 1);
                     }
                     break;
@@ -792,14 +952,86 @@ class Game {
         if (waveElement) waveElement.textContent = this.wave;
         if (comboElement) comboElement.textContent = `x${this.combo}`;
 
-        // Render UI (fallback text on canvas)
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = '16px Arial';
-        this.ctx.fillText(`Health: ${Math.ceil(this.player.health)}/${this.player.maxHealth}`, this.canvas.width - 200, this.canvas.height - 60);
-        this.ctx.fillText(`Shield: ${Math.ceil(this.player.shield)}/${this.player.maxShield}`, this.canvas.width - 200, this.canvas.height - 40);
-
+        // Render XP bar
+        this.renderXPBar();
+        
         // Render minimap
         this.renderMinimap();
+        
+        // Render level up menu
+        if (this.showLevelUpMenu) {
+            this.renderLevelUpMenu();
+        }
+    }
+
+    checkLevelUp() {
+        if (this.experience >= this.experienceToNext) {
+            this.level++;
+            this.experience -= this.experienceToNext;
+            this.experienceToNext = Math.floor(this.experienceToNext * 1.8); // Increase XP requirement more significantly
+            this.generateLevelUpOptions();
+            this.showLevelUpMenu = true;
+            this.gameRunning = false; // Pause game for level up
+        }
+    }
+
+    generateLevelUpOptions() {
+        this.levelUpOptions = [];
+        const availableUpgrades = this.upgradePool.filter(upgrade => {
+            // Filter out upgrades that are already maxed or incompatible
+            switch (upgrade.id) {
+                case 'multishot2': return this.playerStats.multiShotCount < 2;
+                case 'piercing': return !this.playerStats.piercingShots;
+                case 'dashdamage': return !this.playerStats.dashDamage;
+                case 'explosive': return !this.playerStats.explosiveShots;
+                case 'magnetic': return !this.playerStats.magneticField;
+                case 'shieldregen': return !this.playerStats.shieldRegen;
+                case 'vampiric': return !this.playerStats.vampiric;
+                default: return true;
+            }
+        });
+
+        // Generate 3 random options with rarity weighting
+        for (let i = 0; i < 3 && availableUpgrades.length > 0; i++) {
+            const rarityWeights = { common: 60, uncommon: 30, rare: 10 };
+            const totalWeight = Object.values(rarityWeights).reduce((a, b) => a + b, 0);
+            const random = Math.random() * totalWeight;
+            
+            let targetRarity = 'common';
+            let weightSum = 0;
+            for (const [rarity, weight] of Object.entries(rarityWeights)) {
+                weightSum += weight;
+                if (random <= weightSum) {
+                    targetRarity = rarity;
+                    break;
+                }
+            }
+            
+            const rarityUpgrades = availableUpgrades.filter(u => u.rarity === targetRarity);
+            const fallbackUpgrades = availableUpgrades.length > 0 ? availableUpgrades : this.upgradePool;
+            const pool = rarityUpgrades.length > 0 ? rarityUpgrades : fallbackUpgrades;
+            
+            if (pool.length > 0) {
+                const selectedIndex = Math.floor(Math.random() * pool.length);
+                const selected = pool[selectedIndex];
+                this.levelUpOptions.push(selected);
+                
+                // Remove from available to avoid duplicates
+                const originalIndex = availableUpgrades.indexOf(selected);
+                if (originalIndex > -1) {
+                    availableUpgrades.splice(originalIndex, 1);
+                }
+            }
+        }
+    }
+
+    selectUpgrade(index) {
+        if (index >= 0 && index < this.levelUpOptions.length) {
+            const upgrade = this.levelUpOptions[index];
+            upgrade.effect();
+            this.showLevelUpMenu = false;
+            this.gameRunning = true;
+        }
     }
 
     renderMinimap() {
@@ -845,6 +1077,149 @@ class Game {
         });
     }
 
+    renderXPBar() {
+        const barWidth = 300;
+        const barHeight = 20;
+        const barX = (this.canvas.width - barWidth) / 2;
+        const barY = 100; // Move down to avoid being hidden by top UI
+        
+        // XP bar background
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        this.ctx.fillRect(barX - 5, barY - 5, barWidth + 10, barHeight + 10);
+        
+        this.ctx.strokeStyle = '#00ffff';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(barX, barY, barWidth, barHeight);
+        
+        // XP fill
+        const xpPercent = this.experience / this.experienceToNext;
+        this.ctx.fillStyle = '#00ff00';
+        this.ctx.fillRect(barX, barY, barWidth * xpPercent, barHeight);
+        
+        // Level text
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '14px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(`Level ${this.level}`, barX + barWidth / 2, barY - 10);
+        this.ctx.fillText(`${this.experience}/${this.experienceToNext} XP`, barX + barWidth / 2, barY + barHeight + 15);
+        
+        // Ability points indicator
+        if (this.availableAbilityPoints > 0) {
+            this.ctx.fillStyle = '#ffff00';
+            this.ctx.font = 'bold 16px Arial';
+            this.ctx.fillText(`${this.availableAbilityPoints} Ability Points Available!`, barX + barWidth / 2, barY + barHeight + 35);
+        }
+        
+        this.ctx.textAlign = 'left';
+    }
+
+    renderLevelUpMenu() {
+        // Semi-transparent overlay
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Title
+        this.ctx.fillStyle = '#00ffff';
+        this.ctx.font = 'bold 32px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('LEVEL UP!', this.canvas.width / 2, 80);
+        
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '18px Arial';
+        this.ctx.fillText(`Level ${this.level} - Choose an Upgrade`, this.canvas.width / 2, 110);
+        
+        // Upgrade options
+        const optionWidth = 300;
+        const optionHeight = 120;
+        const spacing = 50;
+        const totalWidth = (optionWidth * 3) + (spacing * 2);
+        const startX = (this.canvas.width - totalWidth) / 2;
+        const optionY = 180;
+        
+        // Store option bounds for click detection
+        this.levelUpOptionBounds = [];
+        
+        for (let i = 0; i < this.levelUpOptions.length; i++) {
+            const option = this.levelUpOptions[i];
+            const optionX = startX + (i * (optionWidth + spacing));
+            
+            // Store bounds for click detection
+            this.levelUpOptionBounds[i] = {
+                x: optionX,
+                y: optionY,
+                width: optionWidth,
+                height: optionHeight
+            };
+            
+            // Rarity colors
+            const rarityColors = {
+                common: '#888888',
+                uncommon: '#00aa00',
+                rare: '#aa00aa'
+            };
+            
+            // Option background
+            this.ctx.fillStyle = 'rgba(20, 30, 50, 0.9)';
+            this.ctx.fillRect(optionX, optionY, optionWidth, optionHeight);
+            
+            // Rarity border
+            this.ctx.strokeStyle = rarityColors[option.rarity] || '#888888';
+            this.ctx.lineWidth = 3;
+            this.ctx.strokeRect(optionX, optionY, optionWidth, optionHeight);
+            
+            // Hover effect (simple glow)
+            this.ctx.shadowColor = rarityColors[option.rarity] || '#888888';
+            this.ctx.shadowBlur = 10;
+            this.ctx.strokeRect(optionX, optionY, optionWidth, optionHeight);
+            this.ctx.shadowBlur = 0;
+            
+            // Option content
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.font = 'bold 16px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(option.name, optionX + optionWidth / 2, optionY + 30);
+            
+            // Description (word wrap)
+            this.ctx.font = '14px Arial';
+            this.ctx.fillStyle = '#cccccc';
+            const words = option.description.split(' ');
+            let line = '';
+            let lineY = optionY + 55;
+            
+            for (let j = 0; j < words.length; j++) {
+                const testLine = line + words[j] + ' ';
+                const metrics = this.ctx.measureText(testLine);
+                
+                if (metrics.width > optionWidth - 20 && j > 0) {
+                    this.ctx.fillText(line, optionX + optionWidth / 2, lineY);
+                    line = words[j] + ' ';
+                    lineY += 18;
+                } else {
+                    line = testLine;
+                }
+            }
+            this.ctx.fillText(line, optionX + optionWidth / 2, lineY);
+            
+            // Rarity label
+            this.ctx.fillStyle = rarityColors[option.rarity] || '#888888';
+            this.ctx.font = 'bold 12px Arial';
+            this.ctx.fillText(option.rarity.toUpperCase(), optionX + optionWidth / 2, optionY + optionHeight - 10);
+            
+            // Key number
+            this.ctx.fillStyle = '#00ffff';
+            this.ctx.font = 'bold 20px Arial';
+            this.ctx.fillText(`${i + 1}`, optionX + 20, optionY + 25);
+        }
+        
+        // Instructions
+        this.ctx.fillStyle = '#00ffff';
+        this.ctx.font = '16px Arial';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText('Press 1-3 to select, or click on an option', this.canvas.width / 2, this.canvas.height - 50);
+        
+        this.ctx.textAlign = 'left';
+    }
+
     gameLoop() {
         this.update();
         this.render();
@@ -857,6 +1232,29 @@ class Game {
         this.combo = 1;
         this.comboTimer = 0;
         this.gameRunning = true;
+        
+        // Reset level system
+        this.level = 1;
+        this.experience = 0;
+        this.experienceToNext = 200;
+        this.showLevelUpMenu = false;
+        this.levelUpOptions = [];
+        
+        // Reset player stats
+        this.playerStats = {
+            damageMultiplier: 1,
+            fireRateMultiplier: 1,
+            speedMultiplier: 1,
+            maxHealthBonus: 0,
+            maxShieldBonus: 0,
+            multiShotCount: 0,
+            piercingShots: false,
+            dashDamage: false,
+            explosiveShots: false,
+            magneticField: false,
+            shieldRegen: false,
+            vampiric: false
+        };
 
         this.player.reset(GameConfig.SPACE_WIDTH / 2, GameConfig.SPACE_HEIGHT / 2);
         this.camera.centerOnPlayer(this.player);

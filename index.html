@@ -10,18 +10,7 @@
     <div id="game-container">
         <div class="hud">
             <div class="stats-left">
-                <div class="stat">
-                    <span class="stat-label">HEALTH:</span>
-                    <div class="health-bar">
-                        <div class="health-fill" id="health-fill"></div>
-                    </div>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">SHIELD:</span>
-                    <div class="shield-bar">
-                        <div class="shield-fill" id="shield-fill"></div>
-                    </div>
-                </div>
+                <!-- Health/shield moved to bottom overlay -->
             </div>
             
             <div class="stats-center">
@@ -40,21 +29,30 @@
             </div>
 
             <div class="stats-right">
-                <div class="stat">
-                    <span class="stat-label">WEAPON:</span>
-                    <span id="weapon-type">PULSE</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-label">AMMO:</span>
-                    <span id="ammo">∞</span>
-                </div>
+                <!-- Weapon/ammo removed since weapons can't be changed -->
             </div>
         </div>
 
         <canvas id="game-canvas" width="1200" height="800"></canvas>
         
         <div class="controls-hint">
-            <p>WASD: Move | MOUSE: Aim & Shoot | SPACE: Dash | R: Reload | 1-4: Switch Weapons</p>
+            <p>WASD: Move | MOUSE: Aim & Shoot | SPACE: Dash</p>
+        </div>
+        
+        <!-- Health/Shield bars moved to bottom left -->
+        <div class="health-overlay">
+            <div class="stat">
+                <span class="stat-label">HEALTH:</span>
+                <div class="health-bar">
+                    <div class="health-fill" id="health-fill"></div>
+                </div>
+            </div>
+            <div class="stat">
+                <span class="stat-label">SHIELD:</span>
+                <div class="shield-bar">
+                    <div class="shield-fill" id="shield-fill"></div>
+                </div>
+            </div>
         </div>
         
         <div id="game-over" class="game-over hidden">

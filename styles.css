@@ -268,3 +268,16 @@ body {
 .combo-pulse {
     animation: combo-pulse 0.3s ease-in-out;
 }
+
+.health-overlay {
+    position: absolute;
+    bottom: 60px;
+    left: 20px;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 15px;
+    border: 1px solid #00ffff;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
