@@ -10,10 +10,35 @@
     <div id="game-container">
         <div class="hud">
             <div class="stats-left">
-                <!-- Health/shield moved to bottom overlay -->
+                <div class="stat">
+                    <span class="stat-label">HEALTH:</span>
+                    <div class="health-bar">
+                        <div class="health-fill" id="health-fill"></div>
+                    </div>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">SHIELD:</span>
+                    <div class="shield-bar">
+                        <div class="shield-fill" id="shield-fill"></div>
+                    </div>
+                </div>
             </div>
             
             <div class="stats-center">
+                <div class="stat">
+                    <span class="stat-label">LEVEL:</span>
+                    <span id="level">1</span>
+                </div>
+                <div class="xp-bar-stat">
+                    <span class="stat-label">XP:</span>
+                    <div class="xp-bar">
+                        <div class="xp-fill" id="xp-fill"></div>
+                    </div>
+                    <span class="xp-text" id="xp-text">0/200</span>
+                </div>
+            </div>
+
+            <div class="stats-right">
                 <div class="stat">
                     <span class="stat-label">SCORE:</span>
                     <span id="score">0</span>
@@ -27,10 +52,6 @@
                     <span id="combo">x1</span>
                 </div>
             </div>
-
-            <div class="stats-right">
-                <!-- Weapon/ammo removed since weapons can't be changed -->
-            </div>
         </div>
 
         <canvas id="game-canvas" width="1200" height="800"></canvas>
@@ -39,22 +60,164 @@
             <p>WASD: Move | MOUSE: Aim & Shoot | SPACE: Dash</p>
         </div>
         
-        <!-- Health/Shield bars moved to bottom left -->
-        <div class="health-overlay">
-            <div class="stat">
-                <span class="stat-label">HEALTH:</span>
-                <div class="health-bar">
-                    <div class="health-fill" id="health-fill"></div>
-                </div>
+
+        
+        <div id="start-screen" class="start-screen">
+            <div class="game-title">
+                <h1>GALACTIC DEFENDER</h1>
+                <p class="subtitle">Survive the endless waves of alien invaders</p>
             </div>
-            <div class="stat">
-                <span class="stat-label">SHIELD:</span>
-                <div class="shield-bar">
-                    <div class="shield-fill" id="shield-fill"></div>
+            <button id="start-game-btn" class="start-btn">START GAME</button>
+            <div class="game-info">
+                <p>• Choose your class and fight through waves of enemies</p>
+                <p>• Level up and gain powerful upgrades</p>
+                <p>• How long can you survive?</p>
+            </div>
+        </div>
+
+        <div id="class-selection" class="class-selection hidden">
+            <h2>CHOOSE YOUR CLASS</h2>
+            <div class="class-options">
+                <div class="class-option" data-class="tank">
+                    <div class="class-title">TANK</div>
+                    <div class="class-description">
+                        <p>• High Health & Shield</p>
+                        <p>• Slower Movement</p>
+                        <p>• Defensive Specialist</p>
+                    </div>
+                    <div class="class-stats">
+                        <div class="stat-bar">
+                            <span>Health:</span>
+                            <div class="stat-visual">████████████</div>
+                        </div>
+                        <div class="stat-bar">
+                            <span>Speed:</span>
+                            <div class="stat-visual">████░░░░░░░░</div>
+                        </div>
+                        <div class="stat-bar">
+                            <span>Attack:</span>
+                            <div class="stat-visual">██████░░░░░░</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="class-option" data-class="hunter">
+                    <div class="class-title">HUNTER</div>
+                    <div class="class-description">
+                        <p>• High Attack & Fire Rate</p>
+                        <p>• Balanced Stats</p>
+                        <p>• Combat Specialist</p>
+                    </div>
+                    <div class="class-stats">
+                        <div class="stat-bar">
+                            <span>Health:</span>
+                            <div class="stat-visual">██████░░░░░░</div>
+                        </div>
+                        <div class="stat-bar">
+                            <span>Speed:</span>
+                            <div class="stat-visual">████████░░░░</div>
+                        </div>
+                        <div class="stat-bar">
+                            <span>Attack:</span>
+                            <div class="stat-visual">████████████</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="class-option" data-class="assassin">
+                    <div class="class-title">ASSASSIN</div>
+                    <div class="class-description">
+                        <p>• High Speed & Dash</p>
+                        <p>• High Damage</p>
+                        <p>• Glass Cannon</p>
+                    </div>
+                    <div class="class-stats">
+                        <div class="stat-bar">
+                            <span>Health:</span>
+                            <div class="stat-visual">███░░░░░░░░░</div>
+                        </div>
+                        <div class="stat-bar">
+                            <span>Speed:</span>
+                            <div class="stat-visual">████████████</div>
+                        </div>
+                        <div class="stat-bar">
+                            <span>Attack:</span>
+                            <div class="stat-visual">██████████░░</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="class-option" data-class="engineer">
+                    <div class="class-title">ENGINEER</div>
+                    <div class="class-description">
+                        <p>• Fast Shield Regen</p>
+                        <p>• Multi-Shot Weapons</p>
+                        <p>• Support Specialist</p>
+                    </div>
+                    <div class="class-stats">
+                        <div class="stat-bar">
+                            <span>Health:</span>
+                            <div class="stat-visual">████████░░░░</div>
+                        </div>
+                        <div class="stat-bar">
+                            <span>Speed:</span>
+                            <div class="stat-visual">██████░░░░░░</div>
+                        </div>
+                        <div class="stat-bar">
+                            <span>Attack:</span>
+                            <div class="stat-visual">████████░░░░</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="class-option" data-class="berserker">
+                    <div class="class-title">BERSERKER</div>
+                    <div class="class-description">
+                        <p>• Damage Increases When Hurt</p>
+                        <p>• High Health</p>
+                        <p>• Rage Mechanic</p>
+                    </div>
+                    <div class="class-stats">
+                        <div class="stat-bar">
+                            <span>Health:</span>
+                            <div class="stat-visual">██████████░░</div>
+                        </div>
+                        <div class="stat-bar">
+                            <span>Speed:</span>
+                            <div class="stat-visual">████████░░░░</div>
+                        </div>
+                        <div class="stat-bar">
+                            <span>Attack:</span>
+                            <div class="stat-visual">██████████░░</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="class-option" data-class="sniper">
+                    <div class="class-title">SNIPER</div>
+                    <div class="class-description">
+                        <p>• Long Range Precision</p>
+                        <p>• Piercing Shots</p>
+                        <p>• Slow Fire Rate</p>
+                    </div>
+                    <div class="class-stats">
+                        <div class="stat-bar">
+                            <span>Health:</span>
+                            <div class="stat-visual">█████░░░░░░░</div>
+                        </div>
+                        <div class="stat-bar">
+                            <span>Speed:</span>
+                            <div class="stat-visual">██████░░░░░░</div>
+                        </div>
+                        <div class="stat-bar">
+                            <span>Attack:</span>
+                            <div class="stat-visual">████████████</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        
+
         <div id="game-over" class="game-over hidden">
             <h2>GAME OVER</h2>
             <p>Final Score: <span id="final-score">0</span></p>
