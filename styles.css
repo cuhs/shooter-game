@@ -80,6 +80,30 @@ body {
     width: 160px;
 }
 
+.health-bar.hunter {
+    width: 110px;
+}
+
+.shield-bar.hunter {
+    width: 132px;
+}
+
+.health-bar.assassin {
+    width: 80px;
+}
+
+.shield-bar.assassin {
+    width: 60px;
+}
+
+.health-bar.engineer {
+    width: 100px;
+}
+
+.shield-bar.engineer {
+    width: 192px;
+}
+
 .health-bar.berserker {
     width: 140px;
 }
@@ -386,18 +410,29 @@ body {
     align-items: center;
     margin: 8px 0;
     font-size: 11px;
+    gap: 10px;
 }
 
 .stat-bar span {
     color: #00ffff;
     min-width: 50px;
-    margin-right: 10px;
 }
 
 .stat-visual {
     font-family: monospace;
     color: #00ff00;
     text-shadow: 0 0 5px #00ff00;
+    flex: 1;
+}
+
+.stat-value {
+    font-family: 'Courier New', monospace;
+    color: #ffff00;
+    font-weight: bold;
+    font-size: 10px;
+    text-shadow: 0 0 5px #ffff00;
+    min-width: 25px;
+    text-align: right;
 }
 
 #restart-btn {
