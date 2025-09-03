@@ -199,7 +199,7 @@ class GalacticDefender {
             this.asteroids.push({
                 x: Math.random() * this.space.width,
                 y: Math.random() * this.space.height,
-                size: Math.random() * 15 + 5,
+                size: Math.random() * 30 + 10,
                 rotation: Math.random() * Math.PI * 2,
                 rotationSpeed: (Math.random() - 0.5) * 0.02,
                 color: '#666666',
@@ -253,7 +253,7 @@ class GalacticDefender {
             x: x,
             y: y,
             type: type,
-            size: 15,
+            size: 30,
             color: this.getPowerupColor(type),
             pulse: 0,
             lifetime: 1800 // 30 seconds
@@ -428,7 +428,7 @@ class GalacticDefender {
             x: Math.random() * (this.canvas.width - 100) + 50,
             y: Math.random() * (this.canvas.height - 100) + 50,
             type: type,
-            size: 15,
+            size: 30,
             color: this.getPowerupColor(type),
             pulse: 0,
             lifetime: 600 // 10 seconds at 60fps
