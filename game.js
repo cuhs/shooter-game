@@ -223,7 +223,7 @@ class GalacticDefender {
     spawnSpaceEnemy() {
         const enemyTypes = ['scout', 'fighter', 'bomber', 'cruiser', 'interceptor', 'miner', 'drone'];
         const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
-        
+
         const x = Math.random() * this.space.width;
         const y = Math.random() * this.space.height;
 
@@ -265,16 +265,16 @@ class GalacticDefender {
     spawnRandomEnemy() {
         // Simple space-wide enemy spawning
         if (Math.random() > 0.02) return; // 2% chance per frame
-        
+
         const enemyTypes = ['scout', 'fighter', 'bomber', 'cruiser', 'interceptor', 'miner', 'drone'];
         const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
-        
+
         // Spawn near player but off-screen
         const angle = Math.random() * Math.PI * 2;
         const distance = 400 + Math.random() * 200;
         const x = this.player.x + Math.cos(angle) * distance;
         const y = this.player.y + Math.sin(angle) * distance;
-        
+
         // Make sure it's within space bounds
         const clampedX = Math.max(50, Math.min(this.space.width - 50, x));
         const clampedY = Math.max(50, Math.min(this.space.height - 50, y));
