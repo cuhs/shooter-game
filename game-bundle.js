@@ -1,26 +1,56 @@
-// Game Configuration
+/*
+================================================================================
+                              SPACE SHOOTER GAME
+================================================================================
+
+TABLE OF CONTENTS:
+1. GAME CONFIGURATION - All game constants and settings
+2. ENTITY CLASSES - Player, Enemy, Projectile classes  
+3. MAIN GAME CLASS - Core game logic and state management
+   3.1 Constructor & Initialization
+   3.2 Player Stats & Upgrade System
+   3.3 Game Loop & Update Methods
+   3.4 Input Handling
+   3.5 Collision Detection
+   3.6 Wave Management
+   3.7 Rendering System
+   3.8 UI & Menu Systems
+4. HELPER FUNCTIONS - Utility functions
+5. GAME INITIALIZATION - Startup code
+
+================================================================================
+*/
+
+// ============================================================================
+// 1. GAME CONFIGURATION
+// ============================================================================
+
+/**
+ * GameConfig - Central configuration object containing all game constants
+ * This object defines the core parameters that control game balance and behavior
+ */
 const GameConfig = {
-    // Space dimensions
+    // World dimensions - defines the playable space boundaries
     SPACE_WIDTH: 4000,
     SPACE_HEIGHT: 3000,
 
-    // Player settings
+    // Base player configuration - modified by class selection and upgrades
     PLAYER: {
-        SIZE: 12,
-        SPEED: 5,
-        MAX_HEALTH: 100,
-        MAX_SHIELD: 75,
-        COLOR: '#00ffff',
-        DASH_COOLDOWN: 60,
-        INVULNERABLE_TIME: 120
+        SIZE: 12,                    // Collision radius
+        SPEED: 5,                    // Base movement speed per frame
+        MAX_HEALTH: 100,             // Starting health points
+        MAX_SHIELD: 75,              // Starting shield points
+        COLOR: '#00ffff',            // Default player color (cyan)
+        DASH_COOLDOWN: 60,           // Frames between dash uses (1 second at 60fps)
+        INVULNERABLE_TIME: 120       // Invulnerability frames after taking damage
     },
 
-    // Camera settings
+    // Camera behavior settings
     CAMERA: {
-        FOLLOW_SPEED: 0.3
+        FOLLOW_SPEED: 0.3            // How smoothly camera follows player (0-1)
     },
 
-    // Weapon configurations - Reduced damage for harder difficulty
+    // Available weapons - each has unique characteristics for different playstyles
     WEAPONS: [
         { name: 'PHOTON', damage: 8, speed: 12, size: 3, color: '#00ffff', fireRate: 30, ammo: Infinity },
         { name: 'SCATTER', damage: 6, speed: 10, size: 2, color: '#ff6600', fireRate: 40, ammo: Infinity },
@@ -114,7 +144,13 @@ const GameConfig = {
     }
 };
 
-// Projectile class
+// ============================================================================
+// 2. ENTITY CLASSES
+// ============================================================================
+
+/**
+ * Projectile - Represents bullets/shots fired by player and enemies
+ */
 class Projectile {
     constructor(x, y, vx, vy, weapon, damage) {
         this.x = x;
@@ -188,7 +224,9 @@ class Projectile {
     }
 }
 
-// Player class
+/**
+ * Player - The player's ship with health, shields, and abilities
+ */
 class Player {
     constructor(x, y) {
         this.x = x;
@@ -271,23 +309,20 @@ class Player {
     takeDamage(damage, playerStats = null) {
         if (this.invulnerable > 0) return false;
 
-        console.log(`Player taking ${damage} damage. Health: ${this.health}, Shield: ${this.shield}, MaxShield: ${this.maxShield}`);
-
         let finalDamage = damage;
         
-        // Berserker Armor - reduce damage taken
+        // Apply damage reduction from abilities
         if (playerStats && playerStats.berserkerArmor) {
             finalDamage *= 0.85; // 15% damage reduction
         }
 
         let actualDamage = finalDamage;
 
+        // Shield absorbs damage first
         if (this.shield > 0) {
-            // Shield absorbs damage first
             const shieldDamage = Math.min(this.shield, finalDamage);
             this.shield -= shieldDamage;
             actualDamage -= shieldDamage;
-            console.log(`Shield absorbed ${shieldDamage} damage. Shield now: ${this.shield}`);
             
             // Energy Overflow - reflect shield damage to nearby enemies
             if (playerStats && playerStats.energyShield && shieldDamage > 0) {
@@ -298,7 +333,6 @@ class Player {
         // Remaining damage goes to health
         if (actualDamage > 0) {
             this.health = Math.max(0, this.health - actualDamage);
-            console.log(`Health took ${actualDamage} damage. Health now: ${this.health}`);
         }
 
         this.invulnerable = GameConfig.PLAYER.INVULNERABLE_TIME;
@@ -323,7 +357,9 @@ class Player {
     }
 }
 
-// Enemy class
+/**
+ * Enemy - AI-controlled enemies with various behaviors and abilities
+ */
 class Enemy {
     constructor(x, y, type, wave = 1) {
         this.x = x;
@@ -751,7 +787,9 @@ class Enemy {
     }
 }
 
-// Camera class
+/**
+ * Camera - Handles viewport and smooth following of player
+ */
 class Camera {
     constructor(spaceWidth, spaceHeight, canvas) {
         this.x = 0;
@@ -782,11 +820,26 @@ class Camera {
     }
 }
 
-// Main Game class
+// ============================================================================
+// 3. MAIN GAME CLASS
+// ============================================================================
+
+/**
+ * Game - Main game controller that manages all systems and game state
+ * 
+ * This class orchestrates the entire game experience including:
+ * - Player movement, combat, and progression
+ * - Enemy spawning, AI, and wave management  
+ * - Collision detection and physics
+ * - Rendering and visual effects
+ * - Input handling and UI management
+ * - Upgrade system and class-based abilities
+ */
 class Game {
     constructor() {
-        console.log('Game constructor starting...');
-
+        // ====================================================================
+        // CANVAS & RENDERING SETUP
+        // ====================================================================
         this.canvas = document.getElementById('game-canvas');
         if (!this.canvas) {
             console.error('Canvas element not found!');
@@ -797,31 +850,41 @@ class Game {
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight - 80;
 
-        // Initialize game state
-        this.score = 0;
-        this.wave = 1;
-        this.combo = 1;
-        this.comboTimer = 0;
+        // ====================================================================
+        // CORE GAME STATE
+        // ====================================================================
+        this.score = 0;                     // Player's current score
+        this.wave = 1;                      // Current wave number
+        this.combo = 1;                     // Score multiplier for consecutive kills
+        this.comboTimer = 0;                // Timer for combo decay
 
-        // Wave management
-        this.waveInProgress = false;
-        this.enemiesInWave = 0;
-        this.enemiesKilledInWave = 0;
-        this.waveTransitionTimer = 0;
-        this.waveStartDelay = 180; // 3 seconds at 60fps
-        this.bloodlustTimer = 0; // For berserker bloodlust ability
-        this.stealthTimer = 0; // For assassin stealth ability
+        // ====================================================================
+        // WAVE MANAGEMENT SYSTEM
+        // ====================================================================
+        this.waveInProgress = false;        // Whether a wave is currently active
+        this.enemiesInWave = 0;             // Total enemies spawned in current wave
+        this.enemiesKilledInWave = 0;       // Enemies killed in current wave
+        this.waveTransitionTimer = 0;       // Countdown between waves
+        this.waveStartDelay = 180;          // 3 seconds at 60fps
         
-        // Unique ability timers
-        this.phoenixUsedThisWave = false;
-        this.orbitalStrikeTimer = 0;
-        this.battleFrenzyTimer = 0;
-        this.ghostWalkTimer = 0;
-        this.turrets = []; // For engineer auto-turrets
-        this.hazards = []; // Environmental hazards for strategic positioning
-        this.gameRunning = false; // Start paused for class selection
-        this.gameStarted = false;
-        this.selectedClass = null;
+        // ====================================================================
+        // CLASS-SPECIFIC ABILITY TIMERS
+        // ====================================================================
+        this.bloodlustTimer = 0;            // Berserker bloodlust duration
+        this.stealthTimer = 0;              // Assassin stealth duration
+        this.phoenixUsedThisWave = false;   // Phoenix revival cooldown per wave
+        this.orbitalStrikeTimer = 0;        // Orbital strike cooldown
+        this.battleFrenzyTimer = 0;         // Battle frenzy duration
+        this.ghostWalkTimer = 0;            // Ghost walk duration
+        this.turrets = [];                  // Engineer auto-turrets
+        this.hazards = [];                  // Environmental hazards
+        
+        // ====================================================================
+        // GAME FLOW CONTROL
+        // ====================================================================
+        this.gameRunning = false;           // Game paused until class selection
+        this.gameStarted = false;           // Has player started playing?
+        this.selectedClass = null;          // Player's chosen class
 
         // Level system - Faster progression for easier upgrades
         this.level = 1;
@@ -831,51 +894,7 @@ class Game {
         this.levelUpOptions = [];
 
         // Player stats (tracked for upgrades)
-        this.playerStats = {
-            damageMultiplier: 1,
-            fireRateMultiplier: 1,
-            speedMultiplier: 1,
-            maxHealthBonus: 0,
-            maxShieldBonus: 0,
-            multiShotCount: 0,
-            piercingShots: false,
-            dashDamage: false,
-            explosiveShots: false,
-            magneticField: false,
-            shieldRegen: false,
-            vampiric: false,
-            // New class-specific abilities
-            dashMultiplier: 1,
-            stealthDash: false,
-            shadowStrike: false,
-            damageReduction: 0,
-            thornsDamage: false,
-            fortressMode: false,
-            homingShots: false,
-            criticalChance: 0,
-            rangedBonus: false,
-            headshotChance: 0,
-            projectileSpeedMultiplier: 1,
-            rageMode: false,
-            rageDamage: false,
-            bloodlust: false,
-            rampage: false,
-            autoTurret: false,
-            autoRepair: false,
-            // New legendary and rare abilities
-            timeDistortion: false,
-            phoenixRevive: false,
-            omnislash: false,
-            orbitalStrike: false,
-            ricochetShots: false,
-            chainLightning: false,
-            berserkerArmor: false,
-            ghostWalk: false,
-            doubleShot: false,
-            energyShield: false,
-            battleFrenzy: false,
-            precognition: false
-        };
+        this.playerStats = this.initializePlayerStats();
 
         // All possible upgrades with class restrictions
         this.upgradePool = [
@@ -884,33 +903,23 @@ class Game {
             { id: 'damage2', name: 'Advanced Targeting', description: '+18% weapon damage', rarity: 'uncommon', classes: ['all'], effect: () => this.playerStats.damageMultiplier += 0.18 },
             { id: 'firerate1', name: 'Rapid Fire', description: '+12% fire rate', rarity: 'common', classes: ['all'], effect: () => this.playerStats.fireRateMultiplier += 0.12 },
             { id: 'firerate2', name: 'Auto-Loader', description: '+22% fire rate', rarity: 'uncommon', classes: ['all'], effect: () => this.playerStats.fireRateMultiplier += 0.22 },
-            { id: 'speed1', name: 'Engine Boost', description: '+10% movement speed', rarity: 'common', classes: ['all'], effect: () => {
-                console.log('SPEED UPGRADE: Before - speedMultiplier:', this.playerStats.speedMultiplier);
-                this.playerStats.speedMultiplier += 0.10;
-                console.log('SPEED UPGRADE: After - speedMultiplier:', this.playerStats.speedMultiplier);
-            } },
+            { id: 'speed1', name: 'Engine Boost', description: '+10% movement speed', rarity: 'common', classes: ['all'], effect: () => this.playerStats.speedMultiplier += 0.10 },
             { id: 'speed2', name: 'Afterburners', description: '+18% movement speed', rarity: 'uncommon', classes: ['all'], effect: () => this.playerStats.speedMultiplier += 0.18 },
             { id: 'health1', name: 'Hull Plating', description: '+20 max health', rarity: 'common', classes: ['all'], effect: () => { 
-                console.log('HEALTH UPGRADE: Before - maxHealth:', this.player.maxHealth, 'health:', this.player.health, 'bonus:', this.playerStats.maxHealthBonus);
                 this.playerStats.maxHealthBonus += 20; 
                 this.player.maxHealth += 20; 
                 this.player.health += 20; 
-                console.log('HEALTH UPGRADE: After - maxHealth:', this.player.maxHealth, 'health:', this.player.health, 'bonus:', this.playerStats.maxHealthBonus);
             } },
             { id: 'health2', name: 'Reinforced Hull', description: '+35 max health', rarity: 'uncommon', classes: ['all'], effect: () => { this.playerStats.maxHealthBonus += 35; this.player.maxHealth += 35; this.player.health += 35; } },
             { id: 'shield1', name: 'Shield Generator', description: '+18 max shield', rarity: 'common', classes: ['all'], effect: () => { 
-                console.log('SHIELD UPGRADE: Before - maxShield:', this.player.maxShield, 'shield:', this.player.shield, 'bonus:', this.playerStats.maxShieldBonus);
                 this.playerStats.maxShieldBonus += 18; 
                 this.player.maxShield += 18; 
                 this.player.shield += 18; 
-                console.log('SHIELD UPGRADE: After - maxShield:', this.player.maxShield, 'shield:', this.player.shield, 'bonus:', this.playerStats.maxShieldBonus);
             } },
             { id: 'shield2', name: 'Advanced Shields', description: '+28 max shield', rarity: 'uncommon', classes: ['all'], effect: () => { 
-                console.log('SHIELD2 UPGRADE: Before - maxShield:', this.player.maxShield, 'shield:', this.player.shield, 'bonus:', this.playerStats.maxShieldBonus);
                 this.playerStats.maxShieldBonus += 28; 
                 this.player.maxShield += 28; 
                 this.player.shield += 28; 
-                console.log('SHIELD2 UPGRADE: After - maxShield:', this.player.maxShield, 'shield:', this.player.shield, 'bonus:', this.playerStats.maxShieldBonus);
             } },
 
             // Class-specific special abilities
@@ -1093,16 +1102,88 @@ class Game {
         this.init();
     }
 
-    init() {
-        console.log('Initializing game...');
+    // ========================================================================
+    // 3.1 INITIALIZATION & HELPER FUNCTIONS
+    // ========================================================================
 
+// ============================================================================
+// 4. HELPER FUNCTIONS
+// ============================================================================
+
+    // ========================================================================
+    // 3.2 PLAYER STATS & UPGRADE SYSTEM
+    // ========================================================================
+
+    /**
+     * Initialize player stats to default values
+     */
+    initializePlayerStats() {
+        return {
+            // Basic multipliers
+            damageMultiplier: 1,
+            fireRateMultiplier: 1,
+            speedMultiplier: 1,
+            
+            // Health and shield bonuses
+            maxHealthBonus: 0,
+            maxShieldBonus: 0,
+            
+            // Weapon modifications
+            multiShotCount: 0,
+            piercingShots: false,
+            explosiveShots: false,
+            homingShots: false,
+            projectileSpeedMultiplier: 1,
+            
+            // Defensive abilities
+            damageReduction: 0,
+            shieldRegen: false,
+            autoRepair: false,
+            thornsDamage: false,
+            
+            // Movement abilities
+            dashMultiplier: 1,
+            dashDamage: false,
+            stealthDash: false,
+            shadowStrike: false,
+            
+            // Combat abilities
+            criticalChance: 0,
+            headshotChance: 0,
+            longRangeDamage: false,
+            fortressMode: false,
+            vampiric: false,
+            
+            // Class-specific abilities
+            rageMode: false,
+            rageDamage: false,
+            bloodlust: false,
+            rampage: false,
+            autoTurret: false,
+            magneticField: false,
+            
+            // Legendary abilities
+            timeDistortion: false,
+            phoenixRevive: false,
+            omnislash: false,
+            orbitalStrike: false,
+            ricochetShots: false,
+            chainLightning: false,
+            berserkerArmor: false,
+            ghostWalk: false,
+            doubleShot: false,
+            energyShield: false,
+            battleFrenzy: false,
+            precognition: false
+        };
+    }
+
+    init() {
         this.generateSpaceObjects();
         this.spawnInitialEnemies();
         this.camera.centerOnPlayer(this.player);
         this.setupEventListeners();
         this.gameLoop();
-
-        console.log('Game initialization complete!');
     }
 
     generateSpaceObjects() {
@@ -1262,6 +1343,10 @@ class Game {
         }
     }
 
+    // ========================================================================
+    // 3.6 WAVE MANAGEMENT
+    // ========================================================================
+
     startWave() {
         this.waveInProgress = true;
         this.enemiesInWave = 0;
@@ -1367,7 +1452,7 @@ class Game {
         const typeCounts = {};
         enemyTypes.forEach(type => typeCounts[type] = (typeCounts[type] || 0) + 1);
 
-        console.log(`Wave ${this.wave} started with ${enemiesThisWave} enemies:`, typeCounts);
+
     }
 
     checkWaveCompletion() {
@@ -1384,8 +1469,12 @@ class Game {
         // Bonus score for completing wave
         this.score += this.wave * 100;
 
-        console.log(`Wave ${this.wave - 1} completed! Starting wave ${this.wave} in ${this.waveTransitionTimer / 60} seconds`);
+
     }
+
+    // ========================================================================
+    // 3.4 INPUT HANDLING
+    // ========================================================================
 
     setupEventListeners() {
         // Keyboard controls
@@ -1567,6 +1656,20 @@ class Game {
         }
     }
 
+    // ========================================================================
+    // 3.3 MAIN GAME LOOP & UPDATE METHODS
+    // ========================================================================
+
+    /**
+     * Main game update loop - called every frame (60fps)
+     * Handles all game logic including:
+     * - Player movement and abilities
+     * - Enemy AI and movement
+     * - Projectile physics
+     * - Collision detection
+     * - Wave management
+     * - Timer updates
+     */
     update() {
         if (!this.gameRunning) return;
 
@@ -1715,6 +1818,10 @@ class Game {
 
         // Update timers
         if (this.fireTimer > 0) this.fireTimer--;
+
+        // ========================================================================
+        // 3.5 COLLISION DETECTION
+        // ========================================================================
 
         // Update enemies
         for (let i = this.enemies.length - 1; i >= 0; i--) {
@@ -2177,8 +2284,22 @@ class Game {
         }
     }
 
+    // ========================================================================
+    // 3.7 RENDERING SYSTEM
+    // ========================================================================
+
+    /**
+     * Main rendering method - draws all game elements to canvas
+     * Rendering order (back to front):
+     * 1. Background and space objects (stars, planets, asteroids)
+     * 2. Environmental hazards
+     * 3. Enemies with health bars
+     * 4. Player with visual effects
+     * 5. Projectiles and particles
+     * 6. UI elements (minimap, menus)
+     */
     render() {
-        // Clear canvas
+        // Clear canvas with dark space background
         this.ctx.fillStyle = '#000011';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -3406,9 +3527,7 @@ class Game {
     selectUpgrade(index) {
         if (index >= 0 && index < this.levelUpOptions.length) {
             const upgrade = this.levelUpOptions[index];
-            console.log('SELECTING UPGRADE:', upgrade.name, 'ID:', upgrade.id);
             upgrade.effect();
-            console.log('UPGRADE EFFECT COMPLETED');
             this.showLevelUpMenu = false;
             this.gameRunning = true;
         }
@@ -3519,6 +3638,10 @@ class Game {
     }
 
     // XP bar now rendered in HTML HUD instead of canvas
+
+    // ========================================================================
+    // 3.8 UI & MENU SYSTEMS
+    // ========================================================================
 
     renderLevelUpMenu() {
         // Semi-transparent overlay
@@ -3647,14 +3770,10 @@ class Game {
         const baseMaxHealth = Math.floor(GameConfig.PLAYER.MAX_HEALTH * config.healthMultiplier);
         const baseMaxShield = Math.floor(GameConfig.PLAYER.MAX_SHIELD * config.shieldMultiplier);
         
-        console.log('CLASS SELECTION:', classType, 'baseMaxShield:', baseMaxShield, 'shieldBonus:', this.playerStats.maxShieldBonus);
-        
         this.player.maxHealth = baseMaxHealth + (this.playerStats.maxHealthBonus || 0);
         this.player.health = this.player.maxHealth;
         this.player.maxShield = baseMaxShield + (this.playerStats.maxShieldBonus || 0);
         this.player.shield = this.player.maxShield;
-        
-        console.log('FINAL VALUES: maxHealth:', this.player.maxHealth, 'maxShield:', this.player.maxShield);
 
 
 
@@ -3940,8 +4059,46 @@ class Game {
     }
 }
 
-// Initialize the game when the page loads
+// ============================================================================
+// 5. GAME INITIALIZATION
+// ============================================================================
+
+/**
+ * Game startup - Initialize the game when DOM is ready
+ * This creates the main Game instance which handles all game systems
+ */
 window.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, creating game...');
     new Game();
 });
+
+/*
+================================================================================
+                                GAME SUMMARY
+================================================================================
+
+This Space Shooter game features:
+
+CORE SYSTEMS:
+- Wave-based enemy spawning with increasing difficulty
+- Class-based player progression (Tank, Hunter, Berserker, Assassin, Engineer)
+- Upgrade system with class-specific abilities
+- Multiple weapon types with unique characteristics
+- Collision detection for projectiles, enemies, and environmental hazards
+
+GAME FLOW:
+1. Player selects a class (each with unique bonuses and abilities)
+2. Waves of enemies spawn with different AI behaviors
+3. Player gains XP and levels up, choosing from class-appropriate upgrades
+4. Difficulty scales with wave number and enemy variety
+5. Special abilities and environmental hazards add strategic depth
+
+KEY FEATURES:
+- Smooth camera following with world/screen coordinate conversion
+- Particle effects for visual feedback
+- Minimap for spatial awareness
+- Real-time HUD with health, shields, ammo, and wave information
+- Balanced progression system encouraging different playstyles
+
+The code is organized into logical sections for easy maintenance and extension.
+================================================================================
+*/
