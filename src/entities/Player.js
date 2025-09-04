@@ -21,7 +21,7 @@ export class Player {
         // Handle movement
         let dx = 0;
         let dy = 0;
-        
+
         if (keys['w'] || keys['arrowup']) dy -= 1;
         if (keys['s'] || keys['arrowdown']) dy += 1;
         if (keys['a'] || keys['arrowleft']) dx -= 1;
@@ -60,11 +60,11 @@ export class Player {
         const dashDistance = 100;
         this.x += dx * dashDistance;
         this.y += dy * dashDistance;
-        
+
         // Keep within bounds after dash
         this.x = Math.max(this.size, Math.min(GameConfig.SPACE_WIDTH - this.size, this.x));
         this.y = Math.max(this.size, Math.min(GameConfig.SPACE_HEIGHT - this.size, this.y));
-        
+
         this.dashCooldown = GameConfig.PLAYER.DASH_COOLDOWN;
         this.invulnerable = 30; // Brief invulnerability after dash
     }
