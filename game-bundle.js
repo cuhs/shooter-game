@@ -31,56 +31,56 @@ const GameConfig = {
     // Enemy spaceship types - spawn in different waves
     ENEMY_TYPES: {
         // Wave 1-2: Basic enemies - Increased health for difficulty
-        scout: { 
-            size: 16, speed: 2.2, health: 45, color: '#ff6666', points: 8, 
+        scout: {
+            size: 16, speed: 2.2, health: 45, color: '#ff6666', points: 8,
             minWave: 1, maxWave: 999, spawnWeight: 3,
             shape: 'triangle', thrusterColor: '#ff9999',
             behavior: 'swarm', formationSize: 3, aggressionRange: 150
         },
-        fighter: { 
-            size: 20, speed: 1.8, health: 70, color: '#ff4444', points: 15, 
+        fighter: {
+            size: 20, speed: 1.8, health: 70, color: '#ff4444', points: 15,
             minWave: 1, maxWave: 999, spawnWeight: 2,
             shape: 'diamond', thrusterColor: '#ff7777',
             behavior: 'flanking', formationSize: 2, flankDistance: 200
         },
-        
+
         // Wave 3-5: Medium enemies - Much tankier
-        interceptor: { 
-            size: 18, speed: 2.8, health: 65, color: '#ff8844', points: 20, 
+        interceptor: {
+            size: 18, speed: 2.8, health: 65, color: '#ff8844', points: 20,
             minWave: 3, maxWave: 999, spawnWeight: 2,
             shape: 'arrow', thrusterColor: '#ffaa77',
             behavior: 'hit_and_run', retreatDistance: 250, attackCooldown: 180
         },
-        bomber: { 
-            size: 28, speed: 1.2, health: 120, color: '#ff2222', points: 30, 
+        bomber: {
+            size: 28, speed: 1.2, health: 120, color: '#ff2222', points: 30,
             minWave: 3, maxWave: 999, spawnWeight: 1,
             shape: 'hexagon', thrusterColor: '#ff5555',
             behavior: 'artillery', keepDistance: 300, chargeTime: 120, weakPoint: true
         },
-        
+
         // Wave 6-10: Advanced enemies - Significantly tankier
-        cruiser: { 
-            size: 32, speed: 1.5, health: 160, color: '#cc1111', points: 40, 
+        cruiser: {
+            size: 32, speed: 1.5, health: 160, color: '#cc1111', points: 40,
             minWave: 6, maxWave: 999, spawnWeight: 1,
             shape: 'cruiser', thrusterColor: '#ff4444',
             behavior: 'guardian', shieldRadius: 150, damageReduction: 0.3
         },
-        destroyer: { 
-            size: 36, speed: 1.3, health: 220, color: '#aa0000', points: 60, 
+        destroyer: {
+            size: 36, speed: 1.3, health: 220, color: '#aa0000', points: 60,
             minWave: 8, maxWave: 999, spawnWeight: 1,
             shape: 'destroyer', thrusterColor: '#dd3333',
             behavior: 'berserker', enrageThreshold: 0.5, enrageSpeedBonus: 1.5
         },
-        
+
         // Wave 11+: Elite enemies - Boss-level health
-        battleship: { 
-            size: 44, speed: 1.0, health: 320, color: '#880000', points: 80, 
+        battleship: {
+            size: 44, speed: 1.0, health: 320, color: '#880000', points: 80,
             minWave: 11, maxWave: 999, spawnWeight: 1,
             shape: 'battleship', thrusterColor: '#bb2222',
             behavior: 'commander', commandRadius: 250, buffStrength: 1.3, weakPoint: true
         },
-        dreadnought: { 
-            size: 52, speed: 0.8, health: 450, color: '#660000', points: 120, 
+        dreadnought: {
+            size: 52, speed: 0.8, health: 450, color: '#660000', points: 120,
             minWave: 15, maxWave: 999, spawnWeight: 1,
             shape: 'dreadnought', thrusterColor: '#992222',
             behavior: 'fortress', phases: ['charging', 'firing', 'vulnerable'], phaseTime: 240, weakPoint: true
@@ -105,7 +105,7 @@ const GameConfig = {
         ENEMY_CHANCE: 0.02,
         POWERUP_CHANCE: 0.001
     },
-    
+
     // Wave system configuration - More enemies per wave for longer battles
     WAVE_CONFIG: {
         BASE_ENEMIES_PER_WAVE: 15, // Increased from 10
@@ -227,9 +227,10 @@ class Player {
         this.x += dx * this.speed;
         this.y += dy * this.speed;
 
-        // Keep player within bounds
+        // Keep player within bounds - account for UI bar at top
+        const topOffset = 80; // Account for HUD height
         this.x = Math.max(this.size, Math.min(GameConfig.SPACE_WIDTH - this.size, this.x));
-        this.y = Math.max(this.size, Math.min(GameConfig.SPACE_HEIGHT - this.size, this.y));
+        this.y = Math.max(this.size + topOffset, Math.min(GameConfig.SPACE_HEIGHT - this.size, this.y));
 
         // Handle dash
         if (keys[' '] && this.dashCooldown === 0) {
@@ -255,9 +256,10 @@ class Player {
         this.x += dx * dashDistance;
         this.y += dy * dashDistance;
 
-        // Keep within bounds after dash
+        // Keep within bounds after dash - account for UI bar at top
+        const topOffset = 80; // Account for HUD height
         this.x = Math.max(this.size, Math.min(GameConfig.SPACE_WIDTH - this.size, this.x));
-        this.y = Math.max(this.size, Math.min(GameConfig.SPACE_HEIGHT - this.size, this.y));
+        this.y = Math.max(this.size + topOffset, Math.min(GameConfig.SPACE_HEIGHT - this.size, this.y));
 
         this.dashCooldown = GameConfig.PLAYER.DASH_COOLDOWN;
         this.invulnerable = 30;
@@ -318,7 +320,7 @@ class Enemy {
         this.wave = wave;
 
         const config = GameConfig.ENEMY_TYPES[type];
-        
+
         // Use base stats from config (no wave scaling)
         this.size = config.size;
         this.speed = config.speed;
@@ -352,45 +354,46 @@ class Enemy {
         const dx = player.x - this.x;
         const dy = player.y - this.y;
         const distanceToPlayer = Math.sqrt(dx * dx + dy * dy);
-        
+
         this.behaviorTimer++;
-        
-        // Check if enemy is out of bounds and needs to return
-        const margin = 100;
-        const outOfBounds = this.x < margin || this.x > GameConfig.SPACE_WIDTH - margin || 
-                           this.y < margin || this.y > GameConfig.SPACE_HEIGHT - margin;
-        
+
+        // Check if enemy is out of bounds and needs to return - use same bounds as player
+        const margin = this.size; // Use enemy's own size as margin, same as player
+        const topOffset = 80; // Account for HUD height
+        const outOfBounds = this.x < margin || this.x > GameConfig.SPACE_WIDTH - margin ||
+            this.y < margin + topOffset || this.y > GameConfig.SPACE_HEIGHT - margin;
+
         if (outOfBounds) {
             // Force return to playfield - override all behaviors
             this.returnToPlayfield();
             return;
         }
-        
+
         // Calculate base movement toward player
         let moveAngle = Math.atan2(dy, dx);
         let moveSpeed = GameConfig.ENEMY_TYPES[this.type].speed;
-        
+
         // Apply strategic behavior modifications to base movement
         const behaviorResult = this.applyBehaviorModifications(player, allEnemies, config, moveAngle, moveSpeed, distanceToPlayer);
         moveAngle = behaviorResult.angle;
         moveSpeed = behaviorResult.speed;
-        
+
         // Store previous distance for progress checking
         this.previousDistance = this.previousDistance || distanceToPlayer;
-        
+
         // Apply movement with boundary checking
         this.applyMovement(moveAngle, moveSpeed);
-        
+
         // Check if we're making progress toward player (every few frames)
         if (this.behaviorTimer % 60 === 0) {
             const newDistance = Math.sqrt((player.x - this.x) ** 2 + (player.y - this.y) ** 2);
-            
+
             // If we're not getting closer and we're far away, override with direct movement
             if (newDistance >= this.previousDistance && newDistance > 300) {
                 const directAngle = Math.atan2(player.y - this.y, player.x - this.x);
                 this.angle = directAngle;
             }
-            
+
             this.previousDistance = newDistance;
         }
     }
@@ -402,7 +405,7 @@ class Enemy {
         const dx = centerX - this.x;
         const dy = centerY - this.y;
         const angle = Math.atan2(dy, dx);
-        
+
         // Move at double speed to quickly return
         const returnSpeed = GameConfig.ENEMY_TYPES[this.type].speed * 2;
         this.applyMovement(angle, returnSpeed);
@@ -411,7 +414,7 @@ class Enemy {
     applyBehaviorModifications(player, allEnemies, config, baseAngle, baseSpeed, distanceToPlayer) {
         let modifiedAngle = baseAngle;
         let modifiedSpeed = baseSpeed;
-        
+
         // Apply behavior-specific modifications
         if (config.behavior) {
             try {
@@ -421,49 +424,49 @@ class Enemy {
                         modifiedAngle = swarmResult.angle;
                         modifiedSpeed = swarmResult.speed;
                         break;
-                        
+
                     case 'flanking':
                         const flankResult = this.getFlankingModifications(player, config, baseAngle, baseSpeed, distanceToPlayer);
                         modifiedAngle = flankResult.angle;
                         modifiedSpeed = flankResult.speed;
                         break;
-                        
+
                     case 'hit_and_run':
                         const hitRunResult = this.getHitAndRunModifications(player, config, baseAngle, baseSpeed, distanceToPlayer);
                         modifiedAngle = hitRunResult.angle;
                         modifiedSpeed = hitRunResult.speed;
                         break;
-                        
+
                     case 'artillery':
                         const artilleryResult = this.getArtilleryModifications(player, config, baseAngle, baseSpeed, distanceToPlayer);
                         modifiedAngle = artilleryResult.angle;
                         modifiedSpeed = artilleryResult.speed;
                         break;
-                        
+
                     case 'guardian':
                         const guardianResult = this.getGuardianModifications(player, allEnemies, config, baseAngle, baseSpeed);
                         modifiedAngle = guardianResult.angle;
                         modifiedSpeed = guardianResult.speed;
                         break;
-                        
+
                     case 'berserker':
                         const berserkerResult = this.getBerserkerModifications(player, config, baseAngle, baseSpeed);
                         modifiedAngle = berserkerResult.angle;
                         modifiedSpeed = berserkerResult.speed;
                         break;
-                        
+
                     case 'commander':
                         const commanderResult = this.getCommanderModifications(player, config, baseAngle, baseSpeed);
                         modifiedAngle = commanderResult.angle;
                         modifiedSpeed = commanderResult.speed;
                         break;
-                        
+
                     case 'fortress':
                         const fortressResult = this.getFortressModifications(player, config, baseAngle, baseSpeed);
                         modifiedAngle = fortressResult.angle;
                         modifiedSpeed = fortressResult.speed;
                         break;
-                        
+
                     default:
                         // Unknown behavior - use basic movement toward player
                         break;
@@ -473,17 +476,17 @@ class Enemy {
                 console.warn(`Enemy behavior ${config.behavior} failed, using basic movement:`, error);
             }
         }
-        
+
         return { angle: modifiedAngle, speed: modifiedSpeed };
     }
 
     getSwarmModifications(player, allEnemies, config, baseAngle, baseSpeed) {
         // Find nearby allies for formation
-        const nearbyAllies = allEnemies.filter(enemy => 
+        const nearbyAllies = allEnemies.filter(enemy =>
             enemy !== this && enemy.type === this.type &&
             Math.sqrt((enemy.x - this.x) ** 2 + (enemy.y - this.y) ** 2) < (config.aggressionRange || 150)
         );
-        
+
         if (nearbyAllies.length >= (config.formationSize || 2) - 1) {
             // Coordinated attack - move directly toward player with speed boost
             return { angle: baseAngle, speed: baseSpeed * 1.3 };
@@ -496,14 +499,14 @@ class Enemy {
 
     getFlankingModifications(player, config, baseAngle, baseSpeed, distanceToPlayer) {
         const flankDistance = config.flankDistance || 200;
-        
+
         if (distanceToPlayer > flankDistance * 1.2) {
             // Too far - move closer first
             return { angle: baseAngle, speed: baseSpeed * 1.1 };
         } else if (distanceToPlayer > flankDistance * 0.8) {
             // Move to flanking position - arc around player
             const flankSide = Math.sin(this.behaviorTimer * 0.02) > 0 ? 1 : -1;
-            const flankOffset = flankSide * Math.PI/2.5;
+            const flankOffset = flankSide * Math.PI / 2.5;
             return { angle: baseAngle + flankOffset, speed: baseSpeed * 1.0 };
         } else {
             // Close enough - attack directly
@@ -514,7 +517,7 @@ class Enemy {
     getHitAndRunModifications(player, config, baseAngle, baseSpeed, distanceToPlayer) {
         const attackCooldown = config.attackCooldown || 180;
         const attackPhase = (this.behaviorTimer % attackCooldown) < (attackCooldown / 2);
-        
+
         if (attackPhase) {
             // Attack phase - move toward player aggressively
             return { angle: baseAngle, speed: baseSpeed * 1.5 };
@@ -524,17 +527,17 @@ class Enemy {
             return { angle: retreatAngle, speed: baseSpeed * 1.2 };
         } else {
             // Repositioning - circle around player
-            const circleAngle = baseAngle + Math.PI/2;
+            const circleAngle = baseAngle + Math.PI / 2;
             return { angle: circleAngle, speed: baseSpeed * 0.9 };
         }
     }
 
     getArtilleryModifications(player, config, baseAngle, baseSpeed, distanceToPlayer) {
         const keepDistance = config.keepDistance || 300;
-        
+
         this.chargingPhase = this.chargingPhase || false;
         this.chargeTimer = this.chargeTimer || 0;
-        
+
         if (distanceToPlayer < keepDistance * 0.7) {
             // Too close - retreat while facing player
             this.chargingPhase = false;
@@ -549,7 +552,7 @@ class Enemy {
                 this.chargingPhase = true;
                 this.chargeTimer = 60;
             }
-            
+
             if (this.chargingPhase) {
                 this.chargeTimer--;
                 if (this.chargeTimer <= 0) {
@@ -564,25 +567,25 @@ class Enemy {
 
     getGuardianModifications(player, allEnemies, config, baseAngle, baseSpeed) {
         const shieldRadius = config.shieldRadius || 150;
-        
+
         // Find allies to protect
-        const nearbyAllies = allEnemies.filter(enemy => 
-            enemy !== this && 
+        const nearbyAllies = allEnemies.filter(enemy =>
+            enemy !== this &&
             Math.sqrt((enemy.x - this.x) ** 2 + (enemy.y - this.y) ** 2) < shieldRadius
         );
-        
+
         if (nearbyAllies.length > 0) {
             // Position between player and allies, but still move toward player
             const avgAllyX = nearbyAllies.reduce((sum, ally) => sum + ally.x, 0) / nearbyAllies.length;
             const avgAllyY = nearbyAllies.reduce((sum, ally) => sum + ally.y, 0) / nearbyAllies.length;
-            
+
             // Blend between protecting allies and attacking player
             const protectWeight = 0.4;
             const attackWeight = 0.6;
-            
+
             const protectAngle = Math.atan2(avgAllyY - this.y, avgAllyX - this.x);
             const blendedAngle = this.blendAngles(baseAngle, protectAngle, protectWeight);
-            
+
             return { angle: blendedAngle, speed: baseSpeed * 0.8 };
         } else {
             // No allies to protect - move toward player normally
@@ -593,7 +596,7 @@ class Enemy {
     getBerserkerModifications(player, config, baseAngle, baseSpeed) {
         const healthRatio = this.health / this.maxHealth;
         const enrageThreshold = config.enrageThreshold || 0.5;
-        
+
         if (healthRatio < enrageThreshold) {
             // Enraged - faster and more direct
             this.color = '#ff0000';
@@ -606,7 +609,7 @@ class Enemy {
 
     getCommanderModifications(player, config, baseAngle, baseSpeed) {
         this.weakPointPhase = this.weakPointPhase || false;
-        
+
         // Weak point phase every 5 seconds
         if (this.behaviorTimer % 300 < 60) {
             this.weakPointPhase = true;
@@ -622,14 +625,14 @@ class Enemy {
     getFortressModifications(player, config, baseAngle, baseSpeed) {
         this.currentPhase = this.currentPhase || 0;
         this.phaseTimer = this.phaseTimer || 0;
-        
+
         const phases = config.phases || ['charging', 'firing', 'vulnerable'];
         const phaseTime = config.phaseTime || 240;
         const phase = phases[this.currentPhase];
-        
+
         let speed = 0; // Fortress is mostly stationary
         let color = GameConfig.ENEMY_TYPES[this.type].color;
-        
+
         switch (phase) {
             case 'charging':
                 color = '#ffaa00';
@@ -642,14 +645,14 @@ class Enemy {
                 speed = baseSpeed * 0.3; // Slight movement when vulnerable
                 break;
         }
-        
+
         this.color = color;
         this.phaseTimer++;
         if (this.phaseTimer >= phaseTime) {
             this.currentPhase = (this.currentPhase + 1) % phases.length;
             this.phaseTimer = 0;
         }
-        
+
         return { angle: baseAngle, speed: speed };
     }
 
@@ -667,31 +670,32 @@ class Enemy {
         while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
         while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
         this.angle += angleDiff * 0.15; // Slightly faster rotation for better responsiveness
-        
+
         // Calculate movement
         const moveX = Math.cos(this.angle) * speed;
         const moveY = Math.sin(this.angle) * speed;
-        
+
         // Apply movement with boundary checking
         const newX = this.x + moveX;
         const newY = this.y + moveY;
-        
+
         // Keep within bounds with margin
-        const margin = 50;
+        const margin = this.size; // Use enemy's own size as margin, same as player
+        const topOffset = 80; // Account for HUD height
         const maxX = GameConfig.SPACE_WIDTH - margin;
         const maxY = GameConfig.SPACE_HEIGHT - margin;
-        
+
         // Clamp position to boundaries
         this.x = Math.max(margin, Math.min(maxX, newX));
-        this.y = Math.max(margin, Math.min(maxY, newY));
-        
+        this.y = Math.max(margin + topOffset, Math.min(maxY, newY));
+
         // If we hit a boundary, adjust angle to move away from it
-        if (this.x <= margin || this.x >= maxX || this.y <= margin || this.y >= maxY) {
+        if (this.x <= margin || this.x >= maxX || this.y <= margin + topOffset || this.y >= maxY) {
             // Calculate angle toward center of playfield
             const centerX = GameConfig.SPACE_WIDTH / 2;
             const centerY = GameConfig.SPACE_HEIGHT / 2;
             const toCenterAngle = Math.atan2(centerY - this.y, centerX - this.x);
-            
+
             // Blend current angle with center angle to avoid getting stuck
             this.angle = this.blendAngles(this.angle, toCenterAngle, 0.3);
         }
@@ -700,23 +704,23 @@ class Enemy {
     takeDamage(damage) {
         const config = GameConfig.ENEMY_TYPES[this.type];
         let finalDamage = damage;
-        
+
         // Weak point system - extra damage during vulnerable phases
         if (config.weakPoint) {
-            if (this.chargingPhase || this.weakPointPhase || 
+            if (this.chargingPhase || this.weakPointPhase ||
                 (this.currentPhase !== undefined && config.phases && config.phases[this.currentPhase] === 'vulnerable')) {
                 finalDamage *= 2; // Double damage during weak point
-                
+
                 // Visual feedback for weak point hit
                 this.weakPointHit = 30; // Flash for 0.5 seconds
             }
         }
-        
+
         // Guardian damage reduction for protected allies
         if (config.behavior === 'guardian' && this.nearbyAllies > 0) {
             finalDamage *= (1 - config.damageReduction);
         }
-        
+
         this.health -= finalDamage;
         return this.health <= 0;
     }
@@ -781,7 +785,7 @@ class Game {
         this.wave = 1;
         this.combo = 1;
         this.comboTimer = 0;
-        
+
         // Wave management
         this.waveInProgress = false;
         this.enemiesInWave = 0;
@@ -852,7 +856,7 @@ class Game {
             { id: 'shield2', name: 'Advanced Shields', description: '+28 max shield', rarity: 'uncommon', classes: ['all'], effect: () => { this.playerStats.maxShieldBonus += 28; this.player.maxShield += 28; this.player.shield += 28; } },
 
             // Class-specific special abilities
-            { id: 'multishot1', name: 'Twin Cannons', description: 'Fire 2 projectiles', rarity: 'uncommon', classes: ['hunter', 'engineer', 'berserker'], effect: () => this.playerStats.multiShotCount = Math.max(this.playerStats.multiShotCount, 1) },
+            { id: 'multishot1', name: 'Twin Cannons', description: 'Fire 2 projectiles', rarity: 'uncommon', classes: ['hunter', 'engineer', 'berserker'], effect: () => this.playerStats.multiShotCount = 1 },
             { id: 'multishot2', name: 'Triple Threat', description: 'Fire 3 projectiles', rarity: 'rare', classes: ['hunter', 'engineer'], effect: () => this.playerStats.multiShotCount = Math.max(this.playerStats.multiShotCount, 2) },
             { id: 'piercing', name: 'Piercing Rounds', description: 'Shots pierce through enemies', rarity: 'rare', classes: ['hunter', 'tank'], effect: () => this.playerStats.piercingShots = true },
             { id: 'explosive', name: 'Explosive Rounds', description: 'Shots explode on impact', rarity: 'rare', classes: ['engineer', 'berserker', 'tank'], effect: () => this.playerStats.explosiveShots = true },
@@ -1050,7 +1054,7 @@ class Game {
             // Select enemy type based on current wave
             const availableTypes = Object.entries(GameConfig.ENEMY_TYPES)
                 .filter(([_, config]) => this.wave >= config.minWave && this.wave <= config.maxWave);
-            
+
             if (availableTypes.length === 0) {
                 // Fallback to scout if no types available
                 type = 'scout';
@@ -1058,7 +1062,7 @@ class Game {
                 // Weighted random selection
                 const totalWeight = availableTypes.reduce((sum, [_, config]) => sum + config.spawnWeight, 0);
                 let random = Math.random() * totalWeight;
-                
+
                 for (const [typeName, config] of availableTypes) {
                     random -= config.spawnWeight;
                     if (random <= 0) {
@@ -1071,7 +1075,7 @@ class Game {
 
         const enemy = new Enemy(x, y, type, this.wave);
         this.enemies.push(enemy);
-        
+
         // Track enemies in current wave
         if (this.waveInProgress) {
             this.enemiesInWave++;
@@ -1081,13 +1085,13 @@ class Game {
     spawnHazard() {
         const hazardTypes = ['energy_field', 'asteroid_field', 'gravity_well'];
         const type = hazardTypes[Math.floor(Math.random() * hazardTypes.length)];
-        
+
         // Spawn hazard near player but not too close
         const angle = Math.random() * Math.PI * 2;
         const distance = 300 + Math.random() * 200;
         const x = this.player.x + Math.cos(angle) * distance;
         const y = this.player.y + Math.sin(angle) * distance;
-        
+
         const hazard = {
             x: Math.max(100, Math.min(GameConfig.SPACE_WIDTH - 100, x)),
             y: Math.max(100, Math.min(GameConfig.SPACE_HEIGHT - 100, y)),
@@ -1097,7 +1101,7 @@ class Game {
             intensity: 0.5 + Math.random() * 0.5,
             pulseTimer: 0
         };
-        
+
         this.hazards.push(hazard);
     }
 
@@ -1108,15 +1112,15 @@ class Game {
             const hazard = this.hazards[i];
             hazard.duration--;
             hazard.pulseTimer++;
-            
+
             if (hazard.duration <= 0) {
                 this.hazards.splice(i, 1);
                 continue;
             }
-            
+
             // Apply hazard effects
             const playerDist = Math.sqrt((this.player.x - hazard.x) ** 2 + (this.player.y - hazard.y) ** 2);
-            
+
             if (playerDist < hazard.size) {
                 switch (hazard.type) {
                     case 'energy_field':
@@ -1143,7 +1147,7 @@ class Game {
                         break;
                 }
             }
-            
+
             // Affect enemies too
             this.enemies.forEach(enemy => {
                 const enemyDist = Math.sqrt((enemy.x - hazard.x) ** 2 + (enemy.y - hazard.y) ** 2);
@@ -1175,16 +1179,17 @@ class Game {
         this.waveInProgress = true;
         this.enemiesInWave = 0;
         this.enemiesKilledInWave = 0;
-        
+
         // Calculate enemies for this wave
-        const enemiesThisWave = GameConfig.WAVE_CONFIG.BASE_ENEMIES_PER_WAVE + 
-                               (this.wave - 1) * GameConfig.WAVE_CONFIG.ENEMIES_INCREASE_PER_WAVE;
-        
+        const enemiesThisWave = GameConfig.WAVE_CONFIG.BASE_ENEMIES_PER_WAVE +
+            (this.wave - 1) * GameConfig.WAVE_CONFIG.ENEMIES_INCREASE_PER_WAVE;
+
         // Spawn enemies spread across the entire map - much more distributed
+        const enemySize = 20; // Use average enemy size for spawning bounds
         for (let i = 0; i < enemiesThisWave; i++) {
             let x, y;
             const spawnType = i % 5; // 5 different spawn patterns
-            
+
             switch (spawnType) {
                 case 0: // Far corners of the map
                     const corner = Math.floor(Math.random() * 4);
@@ -1196,57 +1201,57 @@ class Game {
                         case 3: x = cornerOffset; y = GameConfig.SPACE_HEIGHT - cornerOffset; break;
                     }
                     break;
-                    
+
                 case 1: // Map edges - very far from center
                     const edge = Math.floor(Math.random() * 4);
                     const edgeOffset = 100 + Math.random() * 200;
                     switch (edge) {
                         case 0: // Top
                             x = edgeOffset + Math.random() * (GameConfig.SPACE_WIDTH - 2 * edgeOffset);
-                            y = 50 + Math.random() * 150;
+                            y = enemySize + Math.random() * 150;
                             break;
                         case 1: // Right
-                            x = GameConfig.SPACE_WIDTH - 50 - Math.random() * 150;
+                            x = GameConfig.SPACE_WIDTH - enemySize - Math.random() * 150;
                             y = edgeOffset + Math.random() * (GameConfig.SPACE_HEIGHT - 2 * edgeOffset);
                             break;
                         case 2: // Bottom
                             x = edgeOffset + Math.random() * (GameConfig.SPACE_WIDTH - 2 * edgeOffset);
-                            y = GameConfig.SPACE_HEIGHT - 50 - Math.random() * 150;
+                            y = GameConfig.SPACE_HEIGHT - enemySize - Math.random() * 150;
                             break;
                         case 3: // Left
-                            x = 50 + Math.random() * 150;
+                            x = enemySize + Math.random() * 150;
                             y = edgeOffset + Math.random() * (GameConfig.SPACE_HEIGHT - 2 * edgeOffset);
                             break;
                     }
                     break;
-                    
+
                 case 2: // Random across entire map interior
                     x = 300 + Math.random() * (GameConfig.SPACE_WIDTH - 600);
                     y = 300 + Math.random() * (GameConfig.SPACE_HEIGHT - 600);
                     break;
-                    
+
                 case 3: // Wide circle around player - much larger radius
                     const wideAngle = Math.random() * Math.PI * 2;
                     const wideDistance = 1200 + Math.random() * 800; // Much further out
                     x = this.player.x + Math.cos(wideAngle) * wideDistance;
                     y = this.player.y + Math.sin(wideAngle) * wideDistance;
                     break;
-                    
+
                 case 4: // Opposite quadrants from player
                     const playerQuadX = this.player.x < GameConfig.SPACE_WIDTH / 2 ? 0 : 1;
                     const playerQuadY = this.player.y < GameConfig.SPACE_HEIGHT / 2 ? 0 : 1;
                     const oppositeQuadX = 1 - playerQuadX;
                     const oppositeQuadY = 1 - playerQuadY;
-                    
+
                     x = (oppositeQuadX * GameConfig.SPACE_WIDTH / 2) + Math.random() * (GameConfig.SPACE_WIDTH / 2);
                     y = (oppositeQuadY * GameConfig.SPACE_HEIGHT / 2) + Math.random() * (GameConfig.SPACE_HEIGHT / 2);
                     break;
             }
-            
-            // Ensure enemies spawn within world bounds
-            const clampedX = Math.max(100, Math.min(GameConfig.SPACE_WIDTH - 100, x));
-            const clampedY = Math.max(100, Math.min(GameConfig.SPACE_HEIGHT - 100, y));
-            
+
+            // Ensure enemies spawn within world bounds - same as player bounds
+            const clampedX = Math.max(enemySize, Math.min(GameConfig.SPACE_WIDTH - enemySize, x));
+            const clampedY = Math.max(enemySize, Math.min(GameConfig.SPACE_HEIGHT - enemySize, y));
+
             // Ensure minimum distance from player to prevent instant contact
             const distanceFromPlayer = Math.sqrt((clampedX - this.player.x) ** 2 + (clampedY - this.player.y) ** 2);
             if (distanceFromPlayer > 500) { // Much larger minimum buffer
@@ -1257,23 +1262,23 @@ class Game {
                 const safeX = this.player.x + Math.cos(angle) * 800; // Much further push
                 const safeY = this.player.y + Math.sin(angle) * 800;
                 const safeClamped = {
-                    x: Math.max(100, Math.min(GameConfig.SPACE_WIDTH - 100, safeX)),
-                    y: Math.max(100, Math.min(GameConfig.SPACE_HEIGHT - 100, safeY))
+                    x: Math.max(enemySize, Math.min(GameConfig.SPACE_WIDTH - enemySize, safeX)),
+                    y: Math.max(enemySize, Math.min(GameConfig.SPACE_HEIGHT - enemySize, safeY))
                 };
                 this.spawnEnemy(safeClamped.x, safeClamped.y);
             }
         }
-        
+
         // Spawn strategic hazards for higher waves
         if (this.wave >= 5 && Math.random() < 0.4) {
             this.spawnHazard();
         }
-        
+
         // Log enemy types for this wave
         const enemyTypes = this.enemies.slice(-enemiesThisWave).map(e => e.type);
         const typeCounts = {};
         enemyTypes.forEach(type => typeCounts[type] = (typeCounts[type] || 0) + 1);
-        
+
         console.log(`Wave ${this.wave} started with ${enemiesThisWave} enemies:`, typeCounts);
     }
 
@@ -1287,10 +1292,10 @@ class Game {
         this.waveInProgress = false;
         this.wave++;
         this.waveTransitionTimer = GameConfig.WAVE_CONFIG.WAVE_BREAK_DURATION;
-        
+
         // Bonus score for completing wave
         this.score += this.wave * 100;
-        
+
         console.log(`Wave ${this.wave - 1} completed! Starting wave ${this.wave} in ${this.waveTransitionTimer / 60} seconds`);
     }
 
@@ -1525,7 +1530,7 @@ class Game {
                         }
 
                         this.enemies.splice(i, 1);
-                        
+
                         // Track wave progress
                         if (this.waveInProgress) {
                             this.enemiesKilledInWave++;
@@ -1673,7 +1678,7 @@ class Game {
 
                         this.checkLevelUp();
                         this.enemies.splice(i, 1);
-                        
+
                         // Track wave progress
                         if (this.waveInProgress) {
                             this.enemiesKilledInWave++;
@@ -1691,16 +1696,16 @@ class Game {
             if (distance < enemy.size + this.player.size) {
                 // Much more punishing damage scaling
                 let finalDamage = enemy.damage;
-                
+
                 // Size scaling - bigger enemies hit much harder (adjusted for new base sizes)
                 const sizeMultiplier = 1 + (enemy.size - 12) * 0.08; // 8% per size point above 12 (new base)
-                
+
                 // Speed scaling - faster enemies hit much harder  
                 const speedMultiplier = 1 + (enemy.speed - 1) * 0.4; // 40% per speed point above 1
-                
+
                 // Wave scaling - later waves are devastating
                 const waveMultiplier = 1 + (this.wave - 1) * 0.1; // 10% per wave
-                
+
                 // Apply all multipliers for devastating damage
                 finalDamage = Math.floor(finalDamage * sizeMultiplier * speedMultiplier * waveMultiplier);
 
@@ -1755,13 +1760,13 @@ class Game {
                             size: 3 + Math.random() * 2
                         });
                     }
-                    
+
                     // Much stronger screen shake for devastating hits
                     this.screenShake = Math.min(40, Math.floor(finalDamage / 2));
                 }
                 // Remove enemy on contact (kamikaze style)
                 this.enemies.splice(i, 1);
-                
+
                 // Track wave progress
                 if (this.waveInProgress) {
                     this.enemiesKilledInWave++;
@@ -1795,12 +1800,12 @@ class Game {
 
                     // Remove enemy on contact
                     this.enemies.splice(i, 1);
-                    
+
                     // Track wave progress
                     if (this.waveInProgress) {
                         this.enemiesKilledInWave++;
                     }
-                    
+
                     i--; // Adjust index since we removed an element
                     break;
                 }
@@ -1827,7 +1832,7 @@ class Game {
             // Start first wave or next wave if no enemies remain
             this.startWave();
         }
-        
+
         // Check wave completion
         this.checkWaveCompletion();
 
@@ -2168,10 +2173,10 @@ class Game {
             this.ctx.save();
             this.ctx.translate(enemy.x, enemy.y);
             this.ctx.rotate(enemy.angle);
-            
+
             // Draw spaceship based on type
             this.drawEnemySpaceship(enemy);
-            
+
             this.ctx.restore();
 
             // Enemy health bar
@@ -2306,42 +2311,42 @@ class Game {
     drawEnemySpaceship(enemy) {
         const size = enemy.size;
         const config = GameConfig.ENEMY_TYPES[enemy.type];
-        
+
         // Strategic behavior visual indicators
         this.drawBehaviorIndicators(enemy, config);
-        
+
         // Update thruster flicker
         enemy.thrusterFlicker = (enemy.thrusterFlicker + 1) % 20;
-        
+
         switch (enemy.shape) {
             case 'triangle': // Scout - Sleek reconnaissance drone
                 this.drawScout(size, enemy);
                 break;
-                
+
             case 'diamond': // Fighter - Aggressive interceptor
                 this.drawFighter(size, enemy);
                 break;
-                
+
             case 'arrow': // Interceptor - Lightning-fast striker
                 this.drawInterceptor(size, enemy);
                 break;
-                
+
             case 'hexagon': // Bomber - Heavy assault craft
                 this.drawBomber(size, enemy);
                 break;
-                
+
             case 'cruiser': // Cruiser - Military warship
                 this.drawCruiser(size, enemy);
                 break;
-                
+
             case 'destroyer': // Destroyer - Alien war machine
                 this.drawDestroyer(size, enemy);
                 break;
-                
+
             case 'battleship': // Battleship - Massive fortress
                 this.drawBattleship(size, enemy);
                 break;
-                
+
             case 'dreadnought': // Dreadnought - Ultimate alien mothership
                 this.drawDreadnought(size, enemy);
                 break;
@@ -2350,7 +2355,7 @@ class Game {
 
     drawBehaviorIndicators(enemy, config) {
         // Weak point indicators
-        if (config.weakPoint && (enemy.chargingPhase || enemy.weakPointPhase || 
+        if (config.weakPoint && (enemy.chargingPhase || enemy.weakPointPhase ||
             (enemy.currentPhase !== undefined && config.phases && config.phases[enemy.currentPhase] === 'vulnerable'))) {
             // Pulsing red outline for weak point
             this.ctx.strokeStyle = '#ff0000';
@@ -2361,7 +2366,7 @@ class Game {
             this.ctx.stroke();
             this.ctx.globalAlpha = 1;
         }
-        
+
         // Guardian shield indicator
         if (config.behavior === 'guardian' && config.shieldRadius) {
             this.ctx.strokeStyle = '#00aaff';
@@ -2372,7 +2377,7 @@ class Game {
             this.ctx.stroke();
             this.ctx.globalAlpha = 1;
         }
-        
+
         // Commander buff indicator
         if (config.behavior === 'commander' && config.commandRadius) {
             this.ctx.strokeStyle = '#ffaa00';
@@ -2383,7 +2388,7 @@ class Game {
             this.ctx.stroke();
             this.ctx.globalAlpha = 1;
         }
-        
+
         // Formation indicators for swarm behavior
         if (config.behavior === 'swarm' && enemy.speed > GameConfig.ENEMY_TYPES[enemy.type].speed) {
             // Small triangular indicators around swarming enemies
@@ -2399,7 +2404,7 @@ class Game {
             }
             this.ctx.globalAlpha = 1;
         }
-        
+
         // Weak point hit flash
         if (enemy.weakPointHit > 0) {
             this.ctx.fillStyle = '#ffffff';
@@ -2414,7 +2419,7 @@ class Game {
 
     drawScout(size, enemy) {
         // Sleek triangular reconnaissance drone with sensor array
-        
+
         // Engine trail
         if (enemy.thrusterFlicker < 15) {
             this.ctx.fillStyle = enemy.thrusterColor;
@@ -2426,7 +2431,7 @@ class Game {
             this.ctx.fill();
             this.ctx.globalAlpha = 1;
         }
-        
+
         // Main hull - sleek triangle
         this.ctx.fillStyle = enemy.color;
         this.ctx.strokeStyle = '#ffffff';
@@ -2439,13 +2444,13 @@ class Game {
         this.ctx.closePath();
         this.ctx.fill();
         this.ctx.stroke();
-        
+
         // Sensor array (glowing blue)
         this.ctx.fillStyle = '#00aaff';
         this.ctx.beginPath();
         this.ctx.arc(size * 0.5, 0, size * 0.15, 0, Math.PI * 2);
         this.ctx.fill();
-        
+
         // Wing stabilizers
         this.ctx.fillStyle = '#888888';
         this.ctx.fillRect(-size * 0.2, -size * 0.1, size * 0.4, size * 0.05);
@@ -2454,7 +2459,7 @@ class Game {
 
     drawFighter(size, enemy) {
         // Aggressive diamond-shaped interceptor with weapon pods
-        
+
         // Twin engine trails
         if (enemy.thrusterFlicker < 15) {
             this.ctx.fillStyle = enemy.thrusterColor;
@@ -2471,7 +2476,7 @@ class Game {
             this.ctx.fill();
             this.ctx.globalAlpha = 1;
         }
-        
+
         // Main hull - angular diamond
         this.ctx.fillStyle = enemy.color;
         this.ctx.strokeStyle = '#ffffff';
@@ -2486,7 +2491,7 @@ class Game {
         this.ctx.closePath();
         this.ctx.fill();
         this.ctx.stroke();
-        
+
         // Weapon pods (orange glow)
         this.ctx.fillStyle = '#ff6600';
         this.ctx.beginPath();
@@ -2495,7 +2500,7 @@ class Game {
         this.ctx.beginPath();
         this.ctx.arc(size * 0.3, size * 0.4, size * 0.1, 0, Math.PI * 2);
         this.ctx.fill();
-        
+
         // Cockpit
         this.ctx.fillStyle = '#00ffff';
         this.ctx.fillRect(size * 0.1, -size * 0.15, size * 0.3, size * 0.3);
@@ -2503,7 +2508,7 @@ class Game {
 
     drawInterceptor(size, enemy) {
         // Lightning-fast arrow-shaped striker with swept wings
-        
+
         // Single powerful engine
         if (enemy.thrusterFlicker < 15) {
             this.ctx.fillStyle = enemy.thrusterColor;
@@ -2515,7 +2520,7 @@ class Game {
             this.ctx.fill();
             this.ctx.globalAlpha = 1;
         }
-        
+
         // Main hull - swept arrow design
         this.ctx.fillStyle = enemy.color;
         this.ctx.strokeStyle = '#ffffff';
@@ -2533,7 +2538,7 @@ class Game {
         this.ctx.closePath();
         this.ctx.fill();
         this.ctx.stroke();
-        
+
         // Swept wing details
         this.ctx.fillStyle = '#ffaa00';
         this.ctx.beginPath();
@@ -2546,7 +2551,7 @@ class Game {
         this.ctx.lineTo(-size * 0.1, size * 0.3);
         this.ctx.lineTo(size * 0.0, size * 0.2);
         this.ctx.fill();
-        
+
         // Speed stripes
         this.ctx.strokeStyle = '#ffffff';
         this.ctx.lineWidth = 2;
@@ -2560,7 +2565,7 @@ class Game {
 
     drawBomber(size, enemy) {
         // Heavy hexagonal assault craft with missile pods
-        
+
         // Dual heavy engines
         if (enemy.thrusterFlicker < 15) {
             this.ctx.fillStyle = enemy.thrusterColor;
@@ -2577,7 +2582,7 @@ class Game {
             this.ctx.fill();
             this.ctx.globalAlpha = 1;
         }
-        
+
         // Main hull - reinforced hexagon
         this.ctx.fillStyle = enemy.color;
         this.ctx.strokeStyle = '#ffffff';
@@ -2592,7 +2597,7 @@ class Game {
         this.ctx.closePath();
         this.ctx.fill();
         this.ctx.stroke();
-        
+
         // Missile pods (red warning lights)
         this.ctx.fillStyle = '#ff0000';
         this.ctx.beginPath();
@@ -2607,11 +2612,11 @@ class Game {
         this.ctx.beginPath();
         this.ctx.arc(-size * 0.2, size * 0.5, size * 0.12, 0, Math.PI * 2);
         this.ctx.fill();
-        
+
         // Heavy armor plating
         this.ctx.fillStyle = '#666666';
         this.ctx.fillRect(-size * 0.1, -size * 0.3, size * 0.5, size * 0.6);
-        
+
         // Command center
         this.ctx.fillStyle = '#00ff00';
         this.ctx.fillRect(size * 0.1, -size * 0.1, size * 0.2, size * 0.2);
@@ -2619,7 +2624,7 @@ class Game {
 
     drawCruiser(size, enemy) {
         // Military warship with advanced weapon systems
-        
+
         // Triple engine array
         if (enemy.thrusterFlicker < 15) {
             this.ctx.fillStyle = enemy.thrusterColor;
@@ -2633,7 +2638,7 @@ class Game {
             }
             this.ctx.globalAlpha = 1;
         }
-        
+
         // Main hull - elongated warship
         this.ctx.fillStyle = enemy.color;
         this.ctx.strokeStyle = '#ffffff';
@@ -2653,7 +2658,7 @@ class Game {
         this.ctx.closePath();
         this.ctx.fill();
         this.ctx.stroke();
-        
+
         // Weapon turrets
         this.ctx.fillStyle = '#ffaa00';
         this.ctx.beginPath();
@@ -2668,11 +2673,11 @@ class Game {
         this.ctx.beginPath();
         this.ctx.arc(-size * 0.1, size * 0.3, size * 0.08, 0, Math.PI * 2);
         this.ctx.fill();
-        
+
         // Bridge tower
         this.ctx.fillStyle = '#00aaff';
         this.ctx.fillRect(size * 0.1, -size * 0.15, size * 0.3, size * 0.3);
-        
+
         // Hull details
         this.ctx.strokeStyle = '#cccccc';
         this.ctx.lineWidth = 1;
@@ -2686,7 +2691,7 @@ class Game {
 
     drawDestroyer(size, enemy) {
         // Alien war machine with organic curves and energy weapons
-        
+
         // Quad engine pods
         if (enemy.thrusterFlicker < 15) {
             this.ctx.fillStyle = enemy.thrusterColor;
@@ -2701,7 +2706,7 @@ class Game {
             });
             this.ctx.globalAlpha = 1;
         }
-        
+
         // Main hull - organic alien design
         this.ctx.fillStyle = enemy.color;
         this.ctx.strokeStyle = '#ffffff';
@@ -2717,7 +2722,7 @@ class Game {
         this.ctx.quadraticCurveTo(size * 0.6, size * 0.6, size * 0.8, 0);
         this.ctx.fill();
         this.ctx.stroke();
-        
+
         // Energy weapon arrays (pulsing purple)
         const pulseAlpha = 0.5 + 0.5 * Math.sin(enemy.thrusterFlicker * 0.3);
         this.ctx.fillStyle = `rgba(255, 0, 255, ${pulseAlpha})`;
@@ -2733,13 +2738,13 @@ class Game {
         this.ctx.beginPath();
         this.ctx.arc(size * 0.1, size * 0.5, size * 0.1, 0, Math.PI * 2);
         this.ctx.fill();
-        
+
         // Alien bio-tech details
         this.ctx.fillStyle = '#00ff88';
         this.ctx.beginPath();
         this.ctx.arc(size * 0.2, 0, size * 0.15, 0, Math.PI * 2);
         this.ctx.fill();
-        
+
         // Organic ridges
         this.ctx.strokeStyle = '#88ff88';
         this.ctx.lineWidth = 2;
@@ -2753,7 +2758,7 @@ class Game {
 
     drawBattleship(size, enemy) {
         // Massive fortress with multiple weapon decks and shield generators
-        
+
         // Massive engine array
         if (enemy.thrusterFlicker < 15) {
             this.ctx.fillStyle = enemy.thrusterColor;
@@ -2767,7 +2772,7 @@ class Game {
             }
             this.ctx.globalAlpha = 1;
         }
-        
+
         // Main hull - fortress-like structure
         this.ctx.fillStyle = enemy.color;
         this.ctx.strokeStyle = '#ffffff';
@@ -2789,7 +2794,7 @@ class Game {
         this.ctx.closePath();
         this.ctx.fill();
         this.ctx.stroke();
-        
+
         // Multiple weapon decks
         this.ctx.fillStyle = '#ff3300';
         // Upper deck
@@ -2799,7 +2804,7 @@ class Game {
         // Side batteries
         this.ctx.fillRect(-size * 0.2, -size * 0.5, size * 0.3, size * 0.15);
         this.ctx.fillRect(-size * 0.2, size * 0.35, size * 0.3, size * 0.15);
-        
+
         // Shield generators (glowing blue)
         this.ctx.fillStyle = '#00aaff';
         this.ctx.shadowColor = '#00aaff';
@@ -2814,15 +2819,15 @@ class Game {
         this.ctx.arc(-size * 0.4, 0, size * 0.1, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.shadowBlur = 0;
-        
+
         // Command tower
         this.ctx.fillStyle = '#ffff00';
         this.ctx.fillRect(size * 0.3, -size * 0.2, size * 0.3, size * 0.4);
-        
+
         // Heavy armor plating
         this.ctx.fillStyle = '#444444';
         this.ctx.fillRect(-size * 0.1, -size * 0.3, size * 0.4, size * 0.6);
-        
+
         // Warning lights
         this.ctx.fillStyle = enemy.thrusterFlicker < 10 ? '#ff0000' : '#660000';
         this.ctx.beginPath();
@@ -2835,7 +2840,7 @@ class Game {
 
     drawDreadnought(size, enemy) {
         // Ultimate alien mothership with bio-mechanical fusion
-        
+
         // Massive bio-mechanical engines
         if (enemy.thrusterFlicker < 15) {
             this.ctx.fillStyle = enemy.thrusterColor;
@@ -2856,7 +2861,7 @@ class Game {
             }
             this.ctx.globalAlpha = 1;
         }
-        
+
         // Main hull - organic mothership design
         this.ctx.fillStyle = enemy.color;
         this.ctx.strokeStyle = '#ffffff';
@@ -2873,7 +2878,7 @@ class Game {
         this.ctx.quadraticCurveTo(size * 0.7, size * 0.8, size * 0.9, 0);
         this.ctx.fill();
         this.ctx.stroke();
-        
+
         // Central core (pulsing energy)
         const coreAlpha = 0.7 + 0.3 * Math.sin(enemy.thrusterFlicker * 0.2);
         this.ctx.fillStyle = `rgba(255, 255, 0, ${coreAlpha})`;
@@ -2883,7 +2888,7 @@ class Game {
         this.ctx.arc(size * 0.1, 0, size * 0.2, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.shadowBlur = 0;
-        
+
         // Bio-mechanical weapon pods
         const weaponAlpha = 0.6 + 0.4 * Math.sin(enemy.thrusterFlicker * 0.4);
         this.ctx.fillStyle = `rgba(255, 0, 128, ${weaponAlpha})`;
@@ -2911,7 +2916,7 @@ class Game {
         this.ctx.arc(-size * 0.2, size * 0.6, size * 0.1, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.shadowBlur = 0;
-        
+
         // Organic neural networks
         this.ctx.strokeStyle = '#00ff88';
         this.ctx.lineWidth = 3;
@@ -2929,14 +2934,14 @@ class Game {
         this.ctx.quadraticCurveTo(-size * 0.1, size * 0.4, -size * 0.2, size * 0.6);
         this.ctx.stroke();
         this.ctx.shadowBlur = 0;
-        
+
         // Command nexus
         this.ctx.fillStyle = '#ff00ff';
         this.ctx.shadowColor = '#ff00ff';
         this.ctx.shadowBlur = 12;
         this.ctx.fillRect(size * 0.5, -size * 0.15, size * 0.3, size * 0.3);
         this.ctx.shadowBlur = 0;
-        
+
         // Alien hieroglyphs
         this.ctx.fillStyle = '#00ffff';
         this.ctx.font = `${size * 0.1}px monospace`;
@@ -2967,6 +2972,7 @@ class Game {
             // Filter out upgrades that are already maxed or incompatible
             switch (upgrade.id) {
                 // Multi-level upgrades
+                case 'multishot1': return this.playerStats.multiShotCount < 1; // Twin Cannons - can only get if don't have it
                 case 'multishot2': return this.playerStats.multiShotCount < 2;
                 case 'armor': return this.playerStats.damageReduction < 0.5; // Max 50% reduction
                 case 'scope': return this.playerStats.projectileSpeedMultiplier < 2.0;
@@ -3046,10 +3052,10 @@ class Game {
         this.hazards.forEach(hazard => {
             this.ctx.save();
             this.ctx.translate(hazard.x, hazard.y);
-            
+
             const pulse = 0.8 + 0.2 * Math.sin(hazard.pulseTimer * 0.1);
             const alpha = Math.min(1, hazard.duration / 60);
-            
+
             switch (hazard.type) {
                 case 'energy_field':
                     // Crackling energy field
@@ -3066,7 +3072,7 @@ class Game {
                         this.ctx.stroke();
                     }
                     break;
-                    
+
                 case 'asteroid_field':
                     // Rotating asteroid debris
                     this.ctx.fillStyle = `rgba(150, 100, 50, ${alpha * 0.8})`;
@@ -3082,7 +3088,7 @@ class Game {
                         this.ctx.fill();
                     }
                     break;
-                    
+
                 case 'gravity_well':
                     // Swirling gravity distortion
                     this.ctx.strokeStyle = `rgba(100, 150, 255, ${alpha * 0.4})`;
@@ -3096,7 +3102,7 @@ class Game {
                     }
                     break;
             }
-            
+
             this.ctx.restore();
         });
     }
@@ -3318,7 +3324,7 @@ class Game {
         document.getElementById('class-selection').classList.add('hidden');
         this.gameRunning = true;
         this.gameStarted = true;
-        
+
         // Start the first wave after a short delay
         this.waveTransitionTimer = 120; // 2 seconds
     }
@@ -3328,7 +3334,7 @@ class Game {
         this.wave = 1;
         this.combo = 1;
         this.comboTimer = 0;
-        
+
         // Reset wave management
         this.waveInProgress = false;
         this.enemiesInWave = 0;

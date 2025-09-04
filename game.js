@@ -275,9 +275,10 @@ class GalacticDefender {
         const x = this.player.x + Math.cos(angle) * distance;
         const y = this.player.y + Math.sin(angle) * distance;
 
-        // Make sure it's within space bounds
-        const clampedX = Math.max(50, Math.min(this.space.width - 50, x));
-        const clampedY = Math.max(50, Math.min(this.space.height - 50, y));
+        // Make sure it's within space bounds - same as player bounds
+        const enemySize = 20; // Use average enemy size for spawning bounds
+        const clampedX = Math.max(enemySize, Math.min(this.space.width - enemySize, x));
+        const clampedY = Math.max(enemySize, Math.min(this.space.height - enemySize, y));
 
         const enemy = {
             x: clampedX,
@@ -685,9 +686,10 @@ class GalacticDefender {
         this.player.x += moveX * this.player.speed * this.upgrades.speed;
         this.player.y += moveY * this.player.speed * this.upgrades.speed;
 
-        // Keep player in space bounds
+        // Keep player in space bounds - account for UI bar at top
+        const topOffset = 80; // Account for HUD height
         this.player.x = Math.max(this.player.size, Math.min(this.space.width - this.player.size, this.player.x));
-        this.player.y = Math.max(this.player.size, Math.min(this.space.height - this.player.size, this.player.y));
+        this.player.y = Math.max(this.player.size + topOffset, Math.min(this.space.height - this.player.size, this.player.y));
 
         // Update camera to follow player
         this.updateCamera();
