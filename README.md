@@ -12,11 +12,59 @@ A fast-paced, class-based space shooter game built with HTML5 Canvas and JavaScr
 - **Environmental Hazards**: Dynamic battlefield elements that add strategic depth
 
 ### Classes & Abilities
-- **Tank**: High health and shields, damage reduction abilities, fortress mode
-- **Hunter**: Balanced stats with piercing shots and multi-shot capabilities
-- **Berserker**: High damage output, life steal, and rage-based abilities
-- **Assassin**: High mobility with dash attacks, stealth, and critical strikes
-- **Engineer**: Deployable turrets, shield regeneration, and explosive rounds
+
+#### **Tank** - The Fortress
+*High health and shields, defensive specialist*
+- **Base Stats**: +80% health, +60% shields, -30% speed
+- **Unique Abilities**:
+  - **Reactive Armor**: Reduce incoming damage by 25%
+  - **Thorn Plating**: Reflect damage to attackers
+  - **Fortress Mode**: Stationary = +50% damage, +50% damage reduction
+  - **Energy Overflow**: Shield damage reflects to nearby enemies
+  - **Berserker Plating**: Take less damage, deal more when hurt
+
+#### **Hunter** - The Versatile Fighter
+*Balanced stats with precision and multi-shot capabilities*
+- **Base Stats**: Balanced across all attributes
+- **Unique Abilities**:
+  - **Target Tracking**: Projectiles home in on enemies
+  - **Critical Strikes**: 20% chance for 2.5x damage
+  - **Marksman Training**: +50% damage at long range
+  - **Chain Lightning**: Shots arc to nearby enemies
+  - **Ricochet Rounds**: Shots bounce between enemies
+  - **Double Tap**: Each shot fires twice with slight delay
+
+#### **Berserker** - The Damage Dealer
+*High damage output with risk/reward mechanics*
+- **Base Stats**: +50% damage, +30% fire rate, -20% health
+- **Unique Abilities**:
+  - **Berserker Rage**: Low health = higher damage and speed
+  - **Bloodlust**: Kills increase damage for 5 seconds
+  - **Rampage**: Each kill reduces all cooldowns
+  - **Life Steal**: Gain health when killing enemies
+  - **Battle Frenzy**: Each kill increases all stats for 3 seconds
+
+#### **Assassin** - The Mobile Striker
+*High mobility with stealth and dash mechanics*
+- **Base Stats**: +50% speed, +100% dash distance, -20% health
+- **Unique Abilities**:
+  - **Ramming Speed**: Dashing through enemies deals damage
+  - **Shadow Strike**: +100% dash distance and damage
+  - **Cloaking Device**: Brief invisibility after dash
+  - **Ghost Walk**: Phase through enemies and projectiles briefly
+  - **Temporal Distortion**: Enemies move 50% slower
+  - **Omnislash**: Dash hits all enemies in path
+  - **Precognition**: See enemy attack patterns and weak points
+
+#### **Engineer** - The Support Specialist
+*Deployable systems and utility abilities*
+- **Base Stats**: +20% shields, +20% fire rate
+- **Unique Abilities**:
+  - **Auto-Turret**: Deploy a stationary turret
+  - **Auto-Repair**: Slowly regenerate health over time
+  - **Shield Regenerator**: Shields regenerate faster
+  - **Magnetic Field**: Attract items from distance
+  - **Explosive Rounds**: Shots explode on impact
 
 ### Visual Features
 - **Smooth Camera System**: Follows player with configurable smoothing
@@ -53,16 +101,13 @@ A fast-paced, class-based space shooter game built with HTML5 Canvas and JavaScr
 
 ```
 galactic-defender/
-├── index.html              # Main HTML file with game UI
-├── styles.css              # Game styling and HUD layout
-├── game-bundle.js          # Main game logic (consolidated)
-├── game.js                 # Alternative entry point
-└── src/                    # Modular source files
-    ├── config/             # Game configuration
-    ├── core/               # Core game systems
-    ├── entities/           # Game entities (Player, Enemy, etc.)
-    └── systems/            # Game systems (Camera, Weapons, etc.)
+├── index.html              # Main HTML file with game UI and canvas
+├── styles.css              # Game styling, HUD layout, and UI components
+├── game-bundle.js          # Complete game implementation (single file)
+└── README.md               # This documentation file
 ```
+
+**Note**: The game is currently implemented as a single consolidated file (`game-bundle.js`) containing all game logic, systems, and configurations for easy deployment and modification.
 
 ## 🏗️ Code Architecture
 
@@ -130,6 +175,96 @@ Each class has distinct strengths and weaknesses:
 - **Berserker**: High risk/high reward gameplay
 - **Assassin**: Skill-based with mobility focus
 - **Engineer**: Strategic placement and resource management
+
+## 🎯 Complete Abilities Reference
+
+### Universal Upgrades (All Classes)
+
+#### **Damage Upgrades**
+- **Weapon Upgrade**: +10% weapon damage (Common)
+- **Advanced Targeting**: +18% weapon damage (Uncommon)
+- **Military Grade Weapons**: +35% weapon damage (Rare)
+- **Experimental Arsenal**: +60% weapon damage (Legendary)
+
+#### **Fire Rate Upgrades**
+- **Rapid Fire**: +12% fire rate (Common)
+- **Auto-Loader**: +22% fire rate (Uncommon)
+- **Overcharged Systems**: +40% fire rate (Rare)
+- **Quantum Accelerator**: +70% fire rate (Legendary)
+
+#### **Speed Upgrades**
+- **Engine Boost**: +10% movement speed (Common)
+- **Afterburners**: +18% movement speed (Uncommon)
+- **Warp Drive**: +35% movement speed (Rare)
+- **Dimensional Phase**: +60% movement speed (Legendary)
+
+#### **Health Upgrades**
+- **Hull Plating**: +20 max health (Common)
+- **Reinforced Hull**: +35 max health (Uncommon)
+- **Nano-Regeneration**: +60 max health (Rare)
+- **Immortal Chassis**: +100 max health (Legendary)
+
+#### **Shield Upgrades**
+- **Shield Generator**: +18 max shield (Common)
+- **Advanced Shields**: +28 max shield (Uncommon)
+- **Energy Barrier**: +50 max shield (Rare)
+- **Quantum Shield Matrix**: +85 max shield (Legendary)
+
+### Multi-Shot Abilities
+- **Twin Cannons**: Fire 2 projectiles (Uncommon) - Hunter, Engineer, Berserker
+- **Triple Threat**: Fire 3 projectiles (Rare) - Hunter, Engineer
+- **Quad Cannons**: Fire 4 projectiles (Legendary) - Hunter, Engineer
+
+### Weapon Special Effects
+- **Piercing Rounds**: Shots pierce through enemies (Rare) - Hunter, Tank
+- **Explosive Rounds**: Shots explode on impact (Rare) - Engineer, Berserker, Tank
+- **Ricochet Rounds**: Shots bounce between enemies (Rare) - Hunter, Sniper
+- **Chain Lightning**: Shots arc to nearby enemies (Rare) - Engineer, Hunter
+- **Double Tap**: Each shot fires twice with slight delay (Rare) - Sniper, Hunter
+
+### Legendary Abilities
+- **Phoenix Protocol**: Revive once per wave with full health (All Classes)
+- **Temporal Distortion**: Enemies move 50% slower (Assassin, Sniper)
+- **Omnislash**: Dash hits all enemies in path (Assassin, Berserker)
+- **Orbital Strike**: Call down devastating strikes every 10 seconds (Tank, Engineer)
+
+### Class-Specific Abilities
+
+#### Tank Abilities
+- **Shield Regenerator**: Shields regenerate faster (Tank, Engineer)
+- **Reactive Armor**: Reduce incoming damage by 25%
+- **Thorn Plating**: Reflect damage to attackers
+- **Fortress Mode**: Stationary = +50% damage, +50% damage reduction
+- **Energy Overflow**: Shield damage reflects to nearby enemies
+- **Berserker Plating**: Take less damage, deal more when hurt
+
+#### Hunter Abilities
+- **Target Tracking**: Projectiles home in on enemies
+- **Critical Strikes**: 20% chance for 2.5x damage (Hunter, Sniper)
+- **Marksman Training**: +50% damage at long range (Hunter, Sniper)
+
+#### Berserker Abilities
+- **Life Steal**: Gain health when killing enemies (Berserker, Assassin)
+- **Berserker Rage**: Low health = higher damage and speed
+- **Bloodlust**: Kills increase damage for 5 seconds
+- **Rampage**: Each kill reduces all cooldowns
+- **Battle Frenzy**: Each kill increases all stats for 3 seconds
+
+#### Assassin Abilities
+- **Ramming Speed**: Dashing through enemies deals damage
+- **Shadow Strike**: +100% dash distance and damage
+- **Cloaking Device**: Brief invisibility after dash
+- **Ghost Walk**: Phase through enemies and projectiles briefly
+- **Precognition**: See enemy attack patterns and weak points
+
+#### Engineer Abilities
+- **Auto-Turret**: Deploy a stationary turret
+- **Auto-Repair**: Slowly regenerate health over time
+- **Magnetic Field**: Attract items from distance
+
+#### Sniper Abilities
+- **Headshot Mastery**: 50% chance for instant kill on low-health enemies
+- **Enhanced Scope**: +100% projectile speed and range
 
 ## 🔧 Configuration
 

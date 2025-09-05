@@ -310,7 +310,7 @@ class Player {
         if (this.invulnerable > 0) return false;
 
         let finalDamage = damage;
-        
+
         // Apply damage reduction from abilities
         if (playerStats && playerStats.berserkerArmor) {
             finalDamage *= 0.85; // 15% damage reduction
@@ -323,7 +323,7 @@ class Player {
             const shieldDamage = Math.min(this.shield, finalDamage);
             this.shield -= shieldDamage;
             actualDamage -= shieldDamage;
-            
+
             // Energy Overflow - reflect shield damage to nearby enemies
             if (playerStats && playerStats.energyShield && shieldDamage > 0) {
                 this.energyOverflowDamage = shieldDamage;
@@ -420,7 +420,7 @@ class Enemy {
         // Calculate base movement toward player
         let moveAngle = Math.atan2(dy, dx);
         let moveSpeed = GameConfig.ENEMY_TYPES[this.type].speed;
-        
+
         // Apply time distortion effect
         if (playerStats && playerStats.timeDistortion) {
             moveSpeed *= 0.5; // 50% slower
@@ -866,7 +866,7 @@ class Game {
         this.enemiesKilledInWave = 0;       // Enemies killed in current wave
         this.waveTransitionTimer = 0;       // Countdown between waves
         this.waveStartDelay = 180;          // 3 seconds at 60fps
-        
+
         // ====================================================================
         // CLASS-SPECIFIC ABILITY TIMERS
         // ====================================================================
@@ -878,7 +878,7 @@ class Game {
         this.ghostWalkTimer = 0;            // Ghost walk duration
         this.turrets = [];                  // Engineer auto-turrets
         this.hazards = [];                  // Environmental hazards
-        
+
         // ====================================================================
         // GAME FLOW CONTROL
         // ====================================================================
@@ -905,22 +905,28 @@ class Game {
             { id: 'firerate2', name: 'Auto-Loader', description: '+22% fire rate', rarity: 'uncommon', classes: ['all'], effect: () => this.playerStats.fireRateMultiplier += 0.22 },
             { id: 'speed1', name: 'Engine Boost', description: '+10% movement speed', rarity: 'common', classes: ['all'], effect: () => this.playerStats.speedMultiplier += 0.10 },
             { id: 'speed2', name: 'Afterburners', description: '+18% movement speed', rarity: 'uncommon', classes: ['all'], effect: () => this.playerStats.speedMultiplier += 0.18 },
-            { id: 'health1', name: 'Hull Plating', description: '+20 max health', rarity: 'common', classes: ['all'], effect: () => { 
-                this.playerStats.maxHealthBonus += 20; 
-                this.player.maxHealth += 20; 
-                this.player.health += 20; 
-            } },
+            {
+                id: 'health1', name: 'Hull Plating', description: '+20 max health', rarity: 'common', classes: ['all'], effect: () => {
+                    this.playerStats.maxHealthBonus += 20;
+                    this.player.maxHealth += 20;
+                    this.player.health += 20;
+                }
+            },
             { id: 'health2', name: 'Reinforced Hull', description: '+35 max health', rarity: 'uncommon', classes: ['all'], effect: () => { this.playerStats.maxHealthBonus += 35; this.player.maxHealth += 35; this.player.health += 35; } },
-            { id: 'shield1', name: 'Shield Generator', description: '+18 max shield', rarity: 'common', classes: ['all'], effect: () => { 
-                this.playerStats.maxShieldBonus += 18; 
-                this.player.maxShield += 18; 
-                this.player.shield += 18; 
-            } },
-            { id: 'shield2', name: 'Advanced Shields', description: '+28 max shield', rarity: 'uncommon', classes: ['all'], effect: () => { 
-                this.playerStats.maxShieldBonus += 28; 
-                this.player.maxShield += 28; 
-                this.player.shield += 28; 
-            } },
+            {
+                id: 'shield1', name: 'Shield Generator', description: '+18 max shield', rarity: 'common', classes: ['all'], effect: () => {
+                    this.playerStats.maxShieldBonus += 18;
+                    this.player.maxShield += 18;
+                    this.player.shield += 18;
+                }
+            },
+            {
+                id: 'shield2', name: 'Advanced Shields', description: '+28 max shield', rarity: 'uncommon', classes: ['all'], effect: () => {
+                    this.playerStats.maxShieldBonus += 28;
+                    this.player.maxShield += 28;
+                    this.player.shield += 28;
+                }
+            },
 
             // Class-specific special abilities
             { id: 'multishot1', name: 'Twin Cannons', description: 'Fire 2 projectiles', rarity: 'uncommon', classes: ['hunter', 'engineer', 'berserker'], effect: () => this.playerStats.multiShotCount = 1 },
@@ -1106,9 +1112,9 @@ class Game {
     // 3.1 INITIALIZATION & HELPER FUNCTIONS
     // ========================================================================
 
-// ============================================================================
-// 4. HELPER FUNCTIONS
-// ============================================================================
+    // ============================================================================
+    // 4. HELPER FUNCTIONS
+    // ============================================================================
 
     // ========================================================================
     // 3.2 PLAYER STATS & UPGRADE SYSTEM
@@ -1123,37 +1129,37 @@ class Game {
             damageMultiplier: 1,
             fireRateMultiplier: 1,
             speedMultiplier: 1,
-            
+
             // Health and shield bonuses
             maxHealthBonus: 0,
             maxShieldBonus: 0,
-            
+
             // Weapon modifications
             multiShotCount: 0,
             piercingShots: false,
             explosiveShots: false,
             homingShots: false,
             projectileSpeedMultiplier: 1,
-            
+
             // Defensive abilities
             damageReduction: 0,
             shieldRegen: false,
             autoRepair: false,
             thornsDamage: false,
-            
+
             // Movement abilities
             dashMultiplier: 1,
             dashDamage: false,
             stealthDash: false,
             shadowStrike: false,
-            
+
             // Combat abilities
             criticalChance: 0,
             headshotChance: 0,
             longRangeDamage: false,
             fortressMode: false,
             vampiric: false,
-            
+
             // Class-specific abilities
             rageMode: false,
             rageDamage: false,
@@ -1161,14 +1167,14 @@ class Game {
             rampage: false,
             autoTurret: false,
             magneticField: false,
-            
+
             // Legendary abilities
             timeDistortion: false,
             phoenixRevive: false,
             omnislash: false,
             orbitalStrike: false,
             ricochetShots: false,
-            chainLightning: false,
+            chainLightning: true,
             berserkerArmor: false,
             ghostWalk: false,
             doubleShot: false,
@@ -1681,12 +1687,12 @@ class Game {
                 this.orbitalStrikeTimer = 0;
             }
         }
-        
+
         // Update battle frenzy timer
         if (this.battleFrenzyTimer > 0) {
             this.battleFrenzyTimer--;
         }
-        
+
         // Update ghost walk timer
         if (this.ghostWalkTimer > 0) {
             this.ghostWalkTimer--;
@@ -1721,7 +1727,7 @@ class Game {
         if (this.player.dashingThisFrame && this.playerStats.stealthDash) {
             this.stealthTimer = 120; // 2 seconds of stealth
         }
-        
+
         // Check ghost walk activation after dash
         if (this.player.dashingThisFrame && this.playerStats.ghostWalk) {
             this.ghostWalkTimer = 90; // 1.5 seconds of phasing
@@ -1736,7 +1742,7 @@ class Game {
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
                 let hitboxRange = enemy.size + this.player.size + 40; // Default dash hitbox
-                
+
                 // Omnislash - much larger hitbox to hit enemies in path
                 if (this.playerStats.omnislash) {
                     hitboxRange = enemy.size + this.player.size + 120; // Much larger range
@@ -1787,7 +1793,7 @@ class Game {
                         if (this.playerStats.vampiric) {
                             this.player.health = Math.min(this.player.maxHealth, this.player.health + 5);
                         }
-                        
+
                         // Battle Frenzy - boost stats on kill
                         if (this.playerStats.battleFrenzy) {
                             this.battleFrenzyTimer = 180; // 3 seconds at 60 FPS
@@ -1843,7 +1849,7 @@ class Game {
                     if (this.playerStats.precognition) {
                         critChance += 0.15; // +15% crit chance
                     }
-                    
+
                     // Critical hit chance
                     if (critChance > 0 && Math.random() < critChance) {
                         let critMultiplier = 3; // 3x damage on crit
@@ -1895,9 +1901,11 @@ class Game {
                     }
 
                     enemy.takeDamage(finalDamage);
+                    console.log('Projectile hit enemy! chainLightning status:', this.playerStats.chainLightning);
 
                     // Chain Lightning - arc to nearby enemies
                     if (this.playerStats.chainLightning) {
+                        console.log('Chain Lightning triggered!', this.enemies.length, 'enemies nearby');
                         const chainTargets = [];
                         this.enemies.forEach(otherEnemy => {
                             if (otherEnemy !== enemy) {
@@ -1907,18 +1915,23 @@ class Game {
                                 }
                             }
                         });
-                        
+
                         // Chain to up to 2 nearby enemies
                         chainTargets.slice(0, 2).forEach(target => {
                             target.takeDamage(finalDamage * 0.6); // 60% damage to chained enemies
-                            
+
                             // Create chain lightning particles
                             for (let k = 0; k < 8; k++) {
-                                this.createParticle(
-                                    target.x + (Math.random() - 0.5) * 40,
-                                    target.y + (Math.random() - 0.5) * 40,
-                                    '#00ffff', 5, 25
-                                );
+                                this.particles.push({
+                                    x: target.x + (Math.random() - 0.5) * 40,
+                                    y: target.y + (Math.random() - 0.5) * 40,
+                                    vx: (Math.random() - 0.5) * 6,
+                                    vy: (Math.random() - 0.5) * 6,
+                                    color: '#00ffff',
+                                    size: 5,
+                                    life: 25,
+                                    decay: 0.95
+                                });
                             }
                         });
                     }
@@ -1955,7 +1968,7 @@ class Game {
                         // Find nearest enemy within range
                         let nearestEnemy = null;
                         let nearestDistance = Infinity;
-                        
+
                         this.enemies.forEach(otherEnemy => {
                             if (otherEnemy !== enemy) {
                                 const dist = Math.sqrt((otherEnemy.x - enemy.x) ** 2 + (otherEnemy.y - enemy.y) ** 2);
@@ -1965,7 +1978,7 @@ class Game {
                                 }
                             }
                         });
-                        
+
                         if (nearestEnemy) {
                             // Redirect projectile to nearest enemy
                             const angle = Math.atan2(nearestEnemy.y - enemy.y, nearestEnemy.x - enemy.x);
@@ -1973,14 +1986,19 @@ class Game {
                             projectile.vy = Math.sin(angle) * 8;
                             projectile.bounces = (projectile.bounces || 0) + 1;
                             projectile.damage *= 0.75; // Reduce damage on bounce
-                            
+
                             // Create ricochet particles
                             for (let k = 0; k < 5; k++) {
-                                this.createParticle(
-                                    enemy.x + (Math.random() - 0.5) * 30,
-                                    enemy.y + (Math.random() - 0.5) * 30,
-                                    '#ffff00', 4, 15
-                                );
+                                this.particles.push({
+                                    x: enemy.x + (Math.random() - 0.5) * 30,
+                                    y: enemy.y + (Math.random() - 0.5) * 30,
+                                    vx: (Math.random() - 0.5) * 6,
+                                    vy: (Math.random() - 0.5) * 6,
+                                    color: '#ffff00',
+                                    size: 4,
+                                    life: 15,
+                                    decay: 0.95
+                                });
                             }
                         } else {
                             // No target found, remove projectile
@@ -2037,106 +2055,104 @@ class Game {
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance < enemy.size + this.player.size) {
-                // Much more punishing damage scaling
-                let finalDamage = enemy.damage;
+                    // Much more punishing damage scaling
+                    let finalDamage = enemy.damage;
 
-                // Size scaling - bigger enemies hit much harder (adjusted for new base sizes)
-                const sizeMultiplier = 1 + (enemy.size - 12) * 0.08; // 8% per size point above 12 (new base)
+                    // Size scaling - bigger enemies hit much harder (adjusted for new base sizes)
+                    const sizeMultiplier = 1 + (enemy.size - 12) * 0.08; // 8% per size point above 12 (new base)
 
-                // Speed scaling - faster enemies hit much harder  
-                const speedMultiplier = 1 + (enemy.speed - 1) * 0.4; // 40% per speed point above 1
+                    // Speed scaling - faster enemies hit much harder  
+                    const speedMultiplier = 1 + (enemy.speed - 1) * 0.4; // 40% per speed point above 1
 
-                // Wave scaling - later waves are devastating
-                const waveMultiplier = 1 + (this.wave - 1) * 0.1; // 10% per wave
+                    // Wave scaling - later waves are devastating
+                    const waveMultiplier = 1 + (this.wave - 1) * 0.1; // 10% per wave
 
-                // Apply all multipliers for devastating damage
-                finalDamage = Math.floor(finalDamage * sizeMultiplier * speedMultiplier * waveMultiplier);
+                    // Apply all multipliers for devastating damage
+                    finalDamage = Math.floor(finalDamage * sizeMultiplier * speedMultiplier * waveMultiplier);
 
-                // Apply damage reduction from armor
-                if (this.playerStats.damageReduction > 0) {
-                    finalDamage *= (1 - this.playerStats.damageReduction);
-                }
-
-                // Fortress Mode - additional damage reduction when stationary
-                if (this.playerStats.fortressMode) {
-                    const isStationary = !this.keys['w'] && !this.keys['a'] && !this.keys['s'] && !this.keys['d'];
-                    if (isStationary) {
-                        finalDamage *= 0.5; // 50% damage reduction when not moving
+                    // Apply damage reduction from armor
+                    if (this.playerStats.damageReduction > 0) {
+                        finalDamage *= (1 - this.playerStats.damageReduction);
                     }
-                }
 
-                // Stealth - enemies can't see stealthed player
-                if (this.stealthTimer > 0) {
-                    continue; // Skip collision when stealthed
-                }
-
-                if (this.player.takeDamage(finalDamage, this.playerStats)) {
-                    // Energy Overflow - shield damage reflects to nearby enemies
-                    if (this.player.energyOverflowDamage && this.playerStats.energyShield) {
-                        const overflowDamage = this.player.energyOverflowDamage;
-                        this.enemies.forEach(otherEnemy => {
-                            const distance = Math.sqrt((otherEnemy.x - this.player.x) ** 2 + (otherEnemy.y - this.player.y) ** 2);
-                            if (distance < 150) { // Energy overflow radius
-                                otherEnemy.takeDamage(overflowDamage * 0.75); // 75% of shield damage
-                                
-                                // Create energy overflow particles
-                                for (let k = 0; k < 5; k++) {
-                                    this.particles.push({
-                                        x: otherEnemy.x + (Math.random() - 0.5) * 40,
-                                        y: otherEnemy.y + (Math.random() - 0.5) * 40,
-                                        vx: (Math.random() - 0.5) * 8,
-                                        vy: (Math.random() - 0.5) * 8,
-                                        color: '#00aaff',
-                                        size: 6,
-                                        life: 20,
-                                        decay: 0.95
-                                    });
-                                }
-                            }
-                        });
-                        this.player.energyOverflowDamage = 0; // Reset after use
-                    }
-                    
-                    // Thorn damage - reflect damage back to attacker
-                    if (this.playerStats.thornsDamage) {
-                        enemy.takeDamage(finalDamage * 0.5); // Reflect 50% of damage
-
-                        // Create thorn particles
-                        for (let k = 0; k < 6; k++) {
-                            this.particles.push({
-                                x: enemy.x,
-                                y: enemy.y,
-                                vx: (Math.random() - 0.5) * 8,
-                                vy: (Math.random() - 0.5) * 8,
-                                size: 2,
-                                color: '#ffaa00',
-                                life: 35,
-                                decay: 0.93
-                            });
+                    // Fortress Mode - additional damage reduction when stationary
+                    if (this.playerStats.fortressMode) {
+                        const isStationary = !this.keys['w'] && !this.keys['a'] && !this.keys['s'] && !this.keys['d'];
+                        if (isStationary) {
+                            finalDamage *= 0.5; // 50% damage reduction when not moving
                         }
                     }
 
-                    // Create much more dramatic hit particles for devastating damage
-                    const particleCount = Math.min(25, Math.floor(finalDamage / 4)); // More particles for higher damage
-                    for (let k = 0; k < particleCount; k++) {
-                        this.particles.push({
-                            x: this.player.x,
-                            y: this.player.y,
-                            vx: (Math.random() - 0.5) * 12,
-                            vy: (Math.random() - 0.5) * 12,
-                            life: 45,
-                            color: k % 2 === 0 ? '#ff0000' : '#ffaa00',
-                            size: 3 + Math.random() * 2
-                        });
+                    // Stealth - enemies can't see stealthed player
+                    if (this.stealthTimer > 0) {
+                        continue; // Skip collision when stealthed
                     }
 
-                    // Much stronger screen shake for devastating hits
-                    this.screenShake = Math.min(40, Math.floor(finalDamage / 2));
-                }
+                    if (this.player.takeDamage(finalDamage, this.playerStats)) {
+                        // Energy Overflow - shield damage reflects to nearby enemies
+                        if (this.player.energyOverflowDamage && this.playerStats.energyShield) {
+                            const overflowDamage = this.player.energyOverflowDamage;
+                            this.enemies.forEach(otherEnemy => {
+                                const distance = Math.sqrt((otherEnemy.x - this.player.x) ** 2 + (otherEnemy.y - this.player.y) ** 2);
+                                if (distance < 150) { // Energy overflow radius
+                                    otherEnemy.takeDamage(overflowDamage * 0.75); // 75% of shield damage
 
-                // Only remove enemy on contact if player has dash damage abilities and is dashing
-                if (this.player.dashingThisFrame && this.playerStats.dashDamage) {
-                    // Remove enemy on contact (ramming speed style)
+                                    // Create energy overflow particles
+                                    for (let k = 0; k < 5; k++) {
+                                        this.particles.push({
+                                            x: otherEnemy.x + (Math.random() - 0.5) * 40,
+                                            y: otherEnemy.y + (Math.random() - 0.5) * 40,
+                                            vx: (Math.random() - 0.5) * 8,
+                                            vy: (Math.random() - 0.5) * 8,
+                                            color: '#00aaff',
+                                            size: 6,
+                                            life: 20,
+                                            decay: 0.95
+                                        });
+                                    }
+                                }
+                            });
+                            this.player.energyOverflowDamage = 0; // Reset after use
+                        }
+
+                        // Thorn damage - reflect damage back to attacker
+                        if (this.playerStats.thornsDamage) {
+                            enemy.takeDamage(finalDamage * 0.5); // Reflect 50% of damage
+
+                            // Create thorn particles
+                            for (let k = 0; k < 6; k++) {
+                                this.particles.push({
+                                    x: enemy.x,
+                                    y: enemy.y,
+                                    vx: (Math.random() - 0.5) * 8,
+                                    vy: (Math.random() - 0.5) * 8,
+                                    size: 2,
+                                    color: '#ffaa00',
+                                    life: 35,
+                                    decay: 0.93
+                                });
+                            }
+                        }
+
+                        // Create much more dramatic hit particles for devastating damage
+                        const particleCount = Math.min(25, Math.floor(finalDamage / 4)); // More particles for higher damage
+                        for (let k = 0; k < particleCount; k++) {
+                            this.particles.push({
+                                x: this.player.x,
+                                y: this.player.y,
+                                vx: (Math.random() - 0.5) * 12,
+                                vy: (Math.random() - 0.5) * 12,
+                                life: 45,
+                                color: k % 2 === 0 ? '#ff0000' : '#ffaa00',
+                                size: 3 + Math.random() * 2
+                            });
+                        }
+
+                        // Much stronger screen shake for devastating hits
+                        this.screenShake = Math.min(40, Math.floor(finalDamage / 2));
+                    }
+
+                    // Remove enemy after collision damage (prevents spinning around player)
                     this.enemies.splice(i, 1);
 
                     // Track wave progress
@@ -2146,7 +2162,6 @@ class Game {
                     i--; // Adjust index since we removed an element
                     continue;
                 }
-            }
             }
 
             // Check collision with turrets
@@ -2263,7 +2278,7 @@ class Game {
                 this.player.shield = this.player.maxShield;
                 this.player.invulnerable = 180; // 3 seconds of invulnerability
                 this.phoenixUsedThisWave = true;
-                
+
                 // Create phoenix revival effect
                 for (let k = 0; k < 30; k++) {
                     this.particles.push({
@@ -2280,6 +2295,10 @@ class Game {
             } else {
                 this.gameRunning = false;
                 document.getElementById('game-over').classList.remove('hidden');
+
+                // Update final score display
+                document.getElementById('final-score').textContent = this.score;
+                document.getElementById('final-wave').textContent = this.wave;
             }
         }
     }
@@ -2681,13 +2700,13 @@ class Game {
         if (healthFill) {
             const healthPercent = (this.player.health / this.player.maxHealth) * 100;
             healthFill.style.width = `${healthPercent}%`;
-            
+
             // Update health text to show current/max values
             const healthLabel = document.querySelector('.stats-left .stat:first-child .stat-label');
             if (healthLabel) {
                 healthLabel.textContent = `HEALTH: ${Math.floor(this.player.health)}/${Math.floor(this.player.maxHealth)}`;
             }
-            
+
             // Dynamically scale health bar container width based on max health
             const healthBar = document.querySelector('.health-bar');
             if (healthBar) {
@@ -2697,7 +2716,7 @@ class Game {
                 const maxWidth = 200; // Maximum width to prevent UI issues
                 const newWidth = Math.min(maxWidth, baseWidth * healthRatio);
                 healthBar.style.width = `${newWidth}px`;
-                
+
                 // Add subtle glow effect for upgraded bars
                 if (healthRatio > 1.1) {
                     healthBar.style.boxShadow = '0 0 8px rgba(255, 0, 0, 0.5)';
@@ -2710,13 +2729,13 @@ class Game {
         if (shieldFill) {
             const shieldPercent = (this.player.shield / this.player.maxShield) * 100;
             shieldFill.style.width = `${shieldPercent}%`;
-            
+
             // Update shield text to show current/max values
             const shieldLabel = document.querySelector('.stats-left .stat:nth-child(2) .stat-label');
             if (shieldLabel) {
                 shieldLabel.textContent = `SHIELD: ${Math.floor(this.player.shield)}/${Math.floor(this.player.maxShield)}`;
             }
-            
+
             // Dynamically scale shield bar container width based on max shield
             const shieldBar = document.querySelector('.shield-bar');
             if (shieldBar) {
@@ -2726,7 +2745,7 @@ class Game {
                 const maxWidth = 200; // Maximum width to prevent UI issues
                 const newWidth = Math.min(maxWidth, baseWidth * shieldRatio);
                 shieldBar.style.width = `${newWidth}px`;
-                
+
                 // Add subtle glow effect for upgraded bars
                 if (shieldRatio > 1.1) {
                     shieldBar.style.boxShadow = '0 0 8px rgba(0, 255, 255, 0.5)';
@@ -3527,7 +3546,9 @@ class Game {
     selectUpgrade(index) {
         if (index >= 0 && index < this.levelUpOptions.length) {
             const upgrade = this.levelUpOptions[index];
-            upgrade.effect();
+            console.log('Applying upgrade:', upgrade.name, 'ID:', upgrade.id);
+            upgrade.effect.call(this);
+            console.log('After effect - chainLightning:', this.playerStats.chainLightning);
             this.showLevelUpMenu = false;
             this.gameRunning = true;
         }
@@ -3769,7 +3790,7 @@ class Game {
         // Apply class bonuses to player (preserve upgrade bonuses)
         const baseMaxHealth = Math.floor(GameConfig.PLAYER.MAX_HEALTH * config.healthMultiplier);
         const baseMaxShield = Math.floor(GameConfig.PLAYER.MAX_SHIELD * config.shieldMultiplier);
-        
+
         this.player.maxHealth = baseMaxHealth + (this.playerStats.maxHealthBonus || 0);
         this.player.health = this.player.maxHealth;
         this.player.maxShield = baseMaxShield + (this.playerStats.maxShieldBonus || 0);
@@ -4020,18 +4041,18 @@ class Game {
         // Find up to 3 random enemies to target
         const targets = [];
         const availableEnemies = [...this.enemies];
-        
+
         for (let i = 0; i < Math.min(3, availableEnemies.length); i++) {
             const randomIndex = Math.floor(Math.random() * availableEnemies.length);
             targets.push(availableEnemies[randomIndex]);
             availableEnemies.splice(randomIndex, 1);
         }
-        
+
         // Strike each target with balanced damage
         targets.forEach(target => {
             // Balanced damage: 60 base damage (about 4-8 weapon shots)
             target.takeDamage(60);
-            
+
             // Create orbital strike visual effect
             for (let i = 0; i < 15; i++) {
                 this.particles.push({
@@ -4045,7 +4066,7 @@ class Game {
                     decay: 0.95
                 });
             }
-            
+
             // Splash damage to nearby enemies (balanced)
             this.enemies.forEach(enemy => {
                 if (enemy !== target) {
